@@ -1,0 +1,2988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar Error Detective - 600 Question Team Challenge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #1e1b4b, #0f172a 70%);
+            min-height: 100vh;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .game-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.78);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+        }
+        .segment-btn {
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .segment-btn:hover:not(:disabled) {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.45);
+        }
+        .segment-btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+        .team-active {
+            animation: pulseGlow 2s infinite;
+            border-color: #38bdf8 !important;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(99, 102, 241, 0.22)) !important;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.45); }
+            50% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+        }
+        .pop-in {
+            animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.94) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.5); border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
+    </style>
+</head>
+<body class="p-3 sm:p-6 flex flex-col min-h-screen">
+
+    <!-- Top Navigation / Status Header -->
+    <header class="max-w-7xl w-full mx-auto mb-4 flex flex-wrap items-center justify-between gap-3 glass-card px-5 py-3.5 rounded-2xl">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <i class="fa-solid fa-magnifying-glass-chart text-white text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-wide bg-gradient-to-r from-white via-indigo-200 to-cyan-300 bg-clip-text text-transparent">
+                    Grammar Error Detective
+                </h1>
+                <p id="headerSubtitleText" class="text-xs text-slate-400">600-Question Offline & Online Multiplayer Arena</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2.5">
+            <!-- Live Online Room Pill -->
+            <div id="onlineHeaderBadge" class="hidden items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                <span id="onlineHeaderRoleText">ROOM: 000000</span>
+            </div>
+
+            <button id="soundToggleBtn" onclick="toggleSound()" class="px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm flex items-center gap-2 transition" title="Toggle Sound Effects">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-cyan-400"></i>
+                <span class="hidden sm:inline">Sound</span>
+            </button>
+            <button id="lobbyManageBtn" onclick="openOnlineLobbyModal()" class="hidden px-3.5 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-sm items-center gap-2 transition">
+                <i class="fa-solid fa-users-gear"></i>
+                <span class="hidden sm:inline">Room & Roster</span>
+            </button>
+            <button id="questionBankBtn" onclick="openQuestionJumpModal()" class="hidden px-3.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 text-sm items-center gap-2 transition">
+                <i class="fa-solid fa-list-ol text-indigo-400"></i>
+                <span class="hidden sm:inline">Jump to Q#</span>
+            </button>
+            <button id="endGameEarlyBtn" onclick="showLeaderboardScreen()" class="hidden px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-sm items-center gap-2 transition">
+                <i class="fa-solid fa-trophy"></i>
+                <span class="hidden sm:inline">Finish Game</span>
+            </button>
+            <button id="resetSetupBtn" onclick="openResetModal()" class="hidden px-3.5 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-sm items-center gap-2 transition">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span class="hidden sm:inline">Main Menu</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="max-w-7xl w-full mx-auto flex-1 flex flex-col justify-center">
+
+        <!-- 0. FIRST ENTRY SCREEN: CHOOSE OFFLINE OR ONLINE MODE -->
+        <section id="modeSelectScreen" class="glass-card rounded-3xl p-6 sm:p-10 max-w-4xl w-full mx-auto pop-in">
+            <div class="text-center mb-8">
+                <span class="px-3.5 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    Welcome Detective
+                </span>
+                <h2 class="text-3xl sm:text-5xl font-bold mt-3 text-white">Choose How You Want to Play</h2>
+                <p class="text-slate-300 text-sm sm:text-base mt-2 max-w-2xl mx-auto">
+                    Play together on a single screen in the classroom, or host a live online room with a 6-digit code so players can join teams from their own devices!
+                </p>
+            </div>
+
+            <!-- Offline vs Online Selection Cards -->
+            <div id="initialModeCards" class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- OFFLINE MODE CARD -->
+                <div onclick="chooseOfflineMode()" class="cursor-pointer group bg-slate-900/80 hover:bg-slate-800/90 border-2 border-slate-700/80 hover:border-indigo-400 rounded-3xl p-7 transition-all duration-200 flex flex-col justify-between shadow-xl">
+                    <div>
+                        <div class="w-16 h-16 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 flex items-center justify-center text-3xl mb-5 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                        <span class="text-xs uppercase tracking-wider font-bold text-indigo-400">Single Device / Projector</span>
+                        <h3 class="text-2xl font-bold text-white mt-1">Play Offline</h3>
+                        <p class="text-sm text-slate-300 mt-2 leading-relaxed">
+                            Ideal for classrooms, smartboards, or local party play. Set up 1 to 12 teams and take turns right on this screen.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-indigo-300 font-bold text-sm">
+                        <span>Configure Offline Game</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+
+                <!-- ONLINE MODE CARD -->
+                <div onclick="showOnlineChoicePanel()" class="cursor-pointer group bg-slate-900/80 hover:bg-slate-800/90 border-2 border-slate-700/80 hover:border-cyan-400 rounded-3xl p-7 transition-all duration-200 flex flex-col justify-between shadow-xl">
+                    <div>
+                        <div class="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 flex items-center justify-center text-3xl mb-5 group-hover:scale-110 transition">
+                            <i class="fa-solid fa-earth-americas"></i>
+                        </div>
+                        <span class="text-xs uppercase tracking-wider font-bold text-cyan-400">Multi-Device P2P (GitHub Ready)</span>
+                        <h3 class="text-2xl font-bold text-white mt-1">Play Online</h3>
+                        <p class="text-sm text-slate-300 mt-2 leading-relaxed">
+                            Host a game with a <strong>6-digit numerical code</strong> or join an existing room with your name and team assignment!
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between text-cyan-300 font-bold text-sm">
+                        <span>Host or Join Online Room</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ONLINE SUB-MENU: HOST OR JOIN WITH 6-DIGIT CODE -->
+            <div id="onlineSubMenuPanel" class="hidden bg-slate-950/80 border border-cyan-500/30 rounded-3xl p-6 sm:p-8 pop-in">
+                <div class="flex items-center justify-between mb-6 pb-3 border-b border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-wifi"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">Online Multiplayer</h3>
+                            <p class="text-xs text-slate-400">Works directly on GitHub Pages via WebRTC rooms</p>
+                        </div>
+                    </div>
+                    <button onclick="hideOnlineChoicePanel()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- HOST AN ONLINE GAME -->
+                    <div class="bg-slate-900/90 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-xs font-bold uppercase">Option 1 &bull; Host</span>
+                            <h4 class="text-xl font-bold text-white mt-3">Host a New Room</h4>
+                            <p class="text-xs sm:text-sm text-slate-300 mt-1.5">
+                                Create a 6-digit numerical room code, set the number of teams (1–12), choose the <strong>maximum players per team</strong>, and assign or let players join teams.
+                            </p>
+                        </div>
+                        <button onclick="proceedToHostSetup()" class="mt-6 w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-white font-bold text-sm shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-crown"></i>
+                            <span>Set Up Hosted Room</span>
+                        </button>
+                    </div>
+
+                    <!-- JOIN AN ONLINE GAME -->
+                    <div class="bg-slate-900/90 border border-slate-700 rounded-2xl p-6 flex flex-col justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase">Option 2 &bull; Player</span>
+                            <h4 class="text-xl font-bold text-white mt-3">Join with 6-Digit Code</h4>
+                            <div class="space-y-3 mt-3">
+                                <div>
+                                    <label class="block text-xs text-slate-400 uppercase font-semibold mb-1">Your Display Name</label>
+                                    <input id="joinPlayerNameInput" type="text" maxlength="20" placeholder="Enter your name (e.g. Aarav)"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-3.5 py-2.5 text-sm text-white font-medium focus:outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-400 uppercase font-semibold mb-1">6-Digit Numerical Room Code</label>
+                                    <input id="joinRoomCodeInput" type="text" inputmode="numeric" maxlength="6" placeholder="e.g. 482910"
+                                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)"
+                                        class="w-full bg-slate-950 border border-slate-700 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-center font-mono text-xl tracking-widest text-emerald-300 font-bold focus:outline-none">
+                                </div>
+                            </div>
+                            <p id="joinErrorMsg" class="hidden text-xs text-rose-400 font-semibold mt-2"></p>
+                        </div>
+                        <button id="joinRoomConnectBtn" onclick="joinOnlineRoomAsPlayer()" class="mt-4 w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 transition">
+                            <i class="fa-solid fa-right-to-bracket"></i>
+                            <span id="joinRoomConnectBtnText">Join Room</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 1. INITIAL SETUP SCREEN (OFFLINE OR ONLINE HOST) -->
+        <section id="setupScreen" class="hidden glass-card rounded-3xl p-6 sm:p-8 max-w-5xl w-full mx-auto pop-in">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
+                <div>
+                    <span id="setupBadgeText" class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                        Offline Match Setup
+                    </span>
+                    <h2 id="setupHeadingText" class="text-2xl sm:text-4xl font-bold mt-2 text-white">Configure Teams & Rules</h2>
+                </div>
+                <button onclick="returnToModeSelect()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-2 border border-slate-700">
+                    <i class="fa-solid fa-arrow-left"></i> Change Mode
+                </button>
+            </div>
+
+            <!-- ONLINE HOST ROOM CODE & MAX PLAYERS PER TEAM BANNER -->
+            <div id="onlineHostConfigBox" class="hidden mb-6 bg-gradient-to-r from-cyan-950/80 via-slate-900/90 to-indigo-950/80 border border-cyan-500/40 rounded-2xl p-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-center">
+                    <!-- 6-Digit Numerical Code Config -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-cyan-300 mb-1.5">
+                            <i class="fa-solid fa-hashtag mr-1"></i> 6-Digit Room Code
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input id="hostRoomCodeInput" type="text" inputmode="numeric" maxlength="6" value="482910"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)"
+                                class="w-full bg-slate-950 border border-cyan-500/50 rounded-xl px-3.5 py-2.5 text-center font-mono text-2xl font-bold tracking-widest text-cyan-300 focus:outline-none">
+                            <button onclick="generateRandomSixDigitCode()" class="px-3.5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700" title="Generate Random 6-Digit Code">
+                                <i class="fa-solid fa-dice"></i>
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Create your own 6-digit numerical code or roll one.</p>
+                    </div>
+
+                    <!-- Max Players Per Team -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-cyan-300 mb-1.5">
+                            <i class="fa-solid fa-user-group mr-1"></i> Max Players Per Team
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <button onclick="adjustMaxPlayersPerTeam(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700">-</button>
+                            <input id="maxPlayersPerTeamInput" type="number" min="1" max="25" value="4" onchange="validateMaxPlayersPerTeam()"
+                                class="w-20 text-center bg-slate-950 border border-slate-700 rounded-xl py-2 text-xl font-bold text-white">
+                            <button onclick="adjustMaxPlayersPerTeam(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold border border-slate-700">+</button>
+                        </div>
+                        <p class="text-[11px] text-slate-400 mt-1">Host limit for how many players can join each team.</p>
+                    </div>
+
+                    <!-- Team Assignment Mode -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-cyan-300 mb-1.5">
+                            <i class="fa-solid fa-sliders mr-1"></i> Team Assignment Rule
+                        </label>
+                        <select id="teamAssignmentPolicySelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white focus:outline-none">
+                            <option value="host_only">Host Assigns Players to Teams</option>
+                            <option value="both">Host Assigns OR Players Join Assigned/Open Team</option>
+                            <option value="auto_balance">Auto-Assign to Available Team on Join</option>
+                        </select>
+                        <p class="text-[11px] text-slate-400 mt-1">Host can assign or move any player anytime.</p>
+                    </div>
+
+                    <!-- Online Gameplay Mode: Turn-Based vs Virtual Hand-Raise Buzzer -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-amber-300 mb-1.5">
+                            <i class="fa-solid fa-hand-sparkles mr-1"></i> Online Gameplay Style
+                        </label>
+                        <select id="onlinePlayStyleSelect" class="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-sm font-bold text-amber-300 focus:outline-none">
+                            <option value="buzzer">Virtual Hand-Raise Buzzer (Fastest Queue)</option>
+                            <option value="turns">Classic Team Turn-by-Turn Rotation</option>
+                        </select>
+                        <p class="text-[11px] text-slate-400 mt-1">Buzzer lets players raise hands in order (1st, 2nd, 3rd...).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
+                <!-- Number of Teams -->
+                <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-indigo-300 mb-2">
+                        1. Number of Teams (Max 12)
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <button onclick="adjustTeamCount(-1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-lg font-bold transition">-</button>
+                        <input id="teamCountInput" type="number" min="1" max="12" value="4" onchange="handleTeamCountInput(this.value)"
+                            class="w-full text-center bg-slate-950 border border-slate-700 rounded-xl py-2 text-xl font-bold text-white focus:outline-none">
+                        <button onclick="adjustTeamCount(1)" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-lg font-bold transition">+</button>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-2">Choose between 1 and 12 competing teams.</p>
+                </div>
+
+                <!-- Points Per Correct Answer -->
+                <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-emerald-300 mb-2">
+                        2. Base Points / Question
+                    </label>
+                    <div class="flex items-center gap-2">
+                        <input id="pointsPerAnswerInput" type="number" min="1" max="1000" step="5" value="100"
+                            class="w-full text-center bg-slate-950 border border-slate-700 rounded-xl py-2 text-xl font-bold text-emerald-400 focus:outline-none">
+                    </div>
+                    <div class="flex gap-1.5 mt-2">
+                        <button onclick="setPointsPreset(10)" class="flex-1 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">10</button>
+                        <button onclick="setPointsPreset(50)" class="flex-1 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">50</button>
+                        <button onclick="setPointsPreset(100)" class="flex-1 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">100</button>
+                        <button onclick="setPointsPreset(500)" class="flex-1 py-1 text-xs rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300">500</button>
+                    </div>
+                </div>
+
+                <!-- Question Order & Steal Mode -->
+                <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-amber-300 mb-2">
+                        3. Flow & Kahoot Podium
+                    </label>
+                    <div class="space-y-2 text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer text-slate-200">
+                            <input id="shuffleQuestionsToggle" type="checkbox" checked class="w-4 h-4 rounded accent-indigo-500">
+                            <span>Shuffle 600 Questions</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-slate-200">
+                            <input id="allowStealToggle" type="checkbox" checked class="w-4 h-4 rounded accent-indigo-500">
+                            <span>Allow Next Team to Steal</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer text-amber-300 font-semibold">
+                            <input id="kahootAfterEveryQuestionToggle" type="checkbox" checked class="w-4 h-4 rounded accent-amber-400">
+                            <span>Show Kahoot Leaderboard After Every Question</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Turn Countdown Timer -->
+                <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-4">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-cyan-300 mb-2">
+                        4. Turn Timer
+                    </label>
+                    <div class="grid grid-cols-2 gap-1.5" id="setupTimerPresetGroup">
+                        <button type="button" onclick="selectSetupTimer(60)" data-timer="60" class="setup-timer-btn py-1.5 px-2 rounded-xl bg-cyan-500/25 border border-cyan-400 text-cyan-200 font-bold text-xs transition">
+                            60s
+                        </button>
+                        <button type="button" onclick="selectSetupTimer(45)" data-timer="45" class="setup-timer-btn py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold text-xs transition">
+                            45s
+                        </button>
+                        <button type="button" onclick="selectSetupTimer(30)" data-timer="30" class="setup-timer-btn py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold text-xs transition">
+                            30s
+                        </button>
+                        <button type="button" onclick="selectSetupTimer(0)" data-timer="0" class="setup-timer-btn py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold text-xs transition">
+                            Off
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team Names Customization -->
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                        Customize Team Names (1 to 12 Teams)
+                    </h3>
+                    <button onclick="randomizeTeamNames()" class="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1.5 font-medium">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Randomize Fun Names
+                    </button>
+                </div>
+                <div id="teamNamesGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Offline vs Online Launch Buttons -->
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button id="launchOfflineGameBtn" onclick="startGame()" class="w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-white font-bold text-lg shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-3 transition transform hover:scale-[1.02]">
+                    <i class="fa-solid fa-play"></i>
+                    <span>Launch Offline Game (600 Questions)</span>
+                </button>
+                <button id="launchOnlineLobbyBtn" onclick="openHostOnlineRoom()" class="hidden w-full sm:w-auto px-10 py-4 rounded-2xl bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-white font-bold text-lg shadow-xl shadow-cyan-500/30 items-center justify-center gap-3 transition transform hover:scale-[1.02]">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    <span>Open Online Room Lobby & Assign Teams</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- 1B. ONLINE LOBBY & TEAM ASSIGNMENT SCREEN (HOST & PLAYERS) -->
+        <section id="onlineLobbyScreen" class="hidden glass-card rounded-3xl p-6 sm:p-8 max-w-6xl w-full mx-auto pop-in">
+            <div class="flex flex-wrap items-center justify-between gap-4 pb-5 mb-6 border-b border-slate-800">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            Live Online Room
+                        </span>
+                        <span id="lobbyRolePill" class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
+                            Host Control
+                        </span>
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-bold text-white mt-2">Team Assignment & Waiting Lobby</h2>
+                    <p id="lobbySubStatus" class="text-xs sm:text-sm text-slate-400 mt-0.5">
+                        Share the 6-digit room code below. Players enter their name and join or get assigned to a team!
+                    </p>
+                </div>
+
+                <!-- Giant 6-Digit Room Code Display -->
+                <div class="bg-slate-950/90 border-2 border-cyan-400/60 rounded-2xl px-6 py-3 text-center shadow-lg shadow-cyan-500/10">
+                    <div class="text-[10px] uppercase tracking-widest text-cyan-300 font-bold">6-Digit Room Code</div>
+                    <div class="flex items-center justify-center gap-3 mt-0.5">
+                        <span id="lobbyRoomCodeDisplay" class="font-mono text-3xl sm:text-4xl font-extrabold tracking-widest text-white">482910</span>
+                        <button onclick="copyRoomCode()" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 text-xs font-bold border border-slate-700" title="Copy Code">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lobby Summary Bar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5 bg-slate-900/80 border border-slate-800 rounded-2xl px-4 py-3">
+                <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
+                    <span class="text-slate-300"><i class="fa-solid fa-users text-cyan-400 mr-1.5"></i>Connected Players: <strong id="lobbyPlayerCount" class="text-white">0</strong></span>
+                    <span class="text-slate-300"><i class="fa-solid fa-people-group text-indigo-400 mr-1.5"></i>Max Per Team: <strong id="lobbyMaxPerTeamDisplay" class="text-white">4</strong></span>
+                    <span id="lobbyLocalPlayerTeamLabel" class="text-emerald-300 font-semibold"></span>
+                </div>
+                <div id="hostLobbyQuickActions" class="flex flex-wrap items-center gap-2">
+                    <button onclick="addSimulatedOnlinePlayer()" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 text-xs font-semibold" title="Add a test player to preview team assignment and individual leaderboards">
+                        <i class="fa-solid fa-user-plus mr-1"></i> + Add Demo Player
+                    </button>
+                    <button onclick="autoDistributeUnassignedPlayers()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-semibold">
+                        <i class="fa-solid fa-shuffle mr-1"></i> Auto-Balance All Players
+                    </button>
+                </div>
+            </div>
+
+            <!-- Unassigned / Waiting Players Tray (Host can assign them to any team) -->
+            <div id="unassignedPlayersTray" class="mb-6 bg-slate-950/70 border border-amber-500/30 rounded-2xl p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-300">
+                        <i class="fa-solid fa-user-clock mr-1.5"></i> Newly Joined / Unassigned Players
+                    </span>
+                    <span class="text-[11px] text-slate-400">Host can assign any player to any team using the dropdown on their tag</span>
+                </div>
+                <div id="unassignedPlayersList" class="flex flex-wrap gap-2.5 min-h-[38px] items-center">
+                    <span class="text-xs text-slate-500 italic">No unassigned players waiting.</span>
+                </div>
+            </div>
+
+            <!-- Teams Roster Grid (Shows 1 to 12 Teams with Capacity & Assigned Players) -->
+            <div id="lobbyTeamsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                <!-- Populated dynamically -->
+            </div>
+
+            <!-- Host Start Match vs Player Waiting Footer -->
+            <div class="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-800">
+                <button onclick="leaveOnlineRoom()" class="px-5 py-3 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-sm font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-door-open"></i> Leave Room
+                </button>
+
+                <div id="hostStartOnlineMatchWrap" class="flex items-center gap-3">
+                    <button onclick="startOnlineMatchFromLobby()" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-indigo-500 hover:from-emerald-400 hover:to-indigo-400 text-slate-950 font-extrabold text-base shadow-xl shadow-cyan-500/25 flex items-center gap-3 transition transform hover:scale-[1.02]">
+                        <i class="fa-solid fa-rocket"></i>
+                        <span>Start Online Game for Everyone</span>
+                    </button>
+                </div>
+
+                <div id="playerWaitingMatchWrap" class="hidden items-center gap-3 text-cyan-300 text-sm font-semibold bg-cyan-500/10 border border-cyan-500/30 px-5 py-3 rounded-2xl">
+                    <i class="fa-solid fa-circle-notch fa-spin"></i>
+                    <span id="playerWaitingStatusText">Waiting for the Host to start the match...</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. MAIN GAMEPLAY ARENA -->
+        <section id="gameArenaScreen" class="hidden space-y-5">
+            <!-- Top Arena Bar: Active Turn / Buzzer Status + Scoreboard Strip -->
+            <div class="glass-card rounded-3xl p-4 sm:p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-3 pb-3 border-b border-slate-800">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <span id="arenaModePill" class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            Offline Turn Mode
+                        </span>
+                        <div class="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                            <span class="text-slate-400 font-medium">Current Chance:</span>
+                            <span id="activeTurnBannerText" class="px-3 py-1 rounded-xl bg-cyan-500/20 border border-cyan-400/50 text-cyan-300">
+                                Team 1
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-3 text-xs sm:text-sm">
+                        <span class="px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
+                            +<span id="arenaPointsPerQuestion">100</span> pts / correct
+                        </span>
+                        <button onclick="openKahootLeaderboardModal(false)" class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-ranking-star"></i> Live Kahoot Standings
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Teams Scoreboard Grid (Supports inline team name editing & click-to-select turn) -->
+                <div id="scoreboardGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- ONLINE VIRTUAL HAND-RAISE / BUZZER QUEUE BAR (Visible in Online Buzzer Mode) -->
+            <div id="buzzerArenaBar" class="hidden glass-card rounded-3xl p-4 sm:p-5 border-2 border-amber-400/40 bg-gradient-to-r from-amber-950/40 via-slate-900/90 to-indigo-950/50">
+                <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                    <!-- Left: Hand-Raise Buzzer Explanation & Queue -->
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="px-2.5 py-0.5 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold uppercase flex items-center gap-1.5">
+                                <i class="fa-solid fa-hand"></i> Virtual Hand-Raise Buzzer Queue
+                            </span>
+                            <span id="buzzerStatusHint" class="text-xs text-slate-300">
+                                First player to raise their hand gets the 1st chance! If wrong, the 2nd hand in queue gets the next chance!
+                            </span>
+                        </div>
+                        <div id="buzzerQueueList" class="flex flex-wrap items-center gap-2 min-h-[42px] bg-slate-950/70 border border-slate-800 rounded-2xl px-3.5 py-2">
+                            <span class="text-xs text-slate-400 italic">No hands raised yet — be the first to press Raise Hand!</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Giant Raise Hand Button for Players & Clear Queue for Host -->
+                    <div class="flex items-center gap-3">
+                        <button id="raiseHandBuzzerBtn" onclick="triggerRaiseHandBuzzer()"
+                            class="flex-1 lg:flex-initial px-7 py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-slate-950 font-extrabold text-base sm:text-lg shadow-xl shadow-amber-500/30 flex items-center justify-center gap-3 transition transform active:scale-95">
+                            <i class="fa-solid fa-hand-fist text-xl"></i>
+                            <span id="raiseHandBuzzerBtnText">RAISE HAND / BUZZ IN!</span>
+                        </button>
+                        <button id="hostSimulateHandRaiseBtn" onclick="simulateRandomPlayerHandRaise()" class="hidden px-3.5 py-4 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold" title="Simulate a player raising hand in order">
+                            <i class="fa-solid fa-hand-sparkles mr-1"></i> + Test Hand
+                        </button>
+                        <button id="hostClearBuzzerBtn" onclick="hostClearBuzzerQueue()" class="hidden px-3.5 py-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-bold" title="Reset Hand Queue">
+                            <i class="fa-solid fa-broom mr-1"></i> Reset Queue
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Row: Vertical Left Countdown Timer + Main Question Detective Card -->
+            <div class="flex flex-col lg:flex-row gap-5 items-stretch">
+                <!-- VERTICAL TIMER TOWER ON THE LEFT SIDE OF QUESTION SECTION -->
+                <aside class="lg:w-44 w-full glass-card rounded-3xl p-4 flex flex-row lg:flex-col items-center justify-between gap-4 border border-cyan-500/30">
+                    <div class="text-center w-full">
+                        <div class="text-[11px] font-bold uppercase tracking-widest text-cyan-300 flex items-center justify-center gap-1.5">
+                            <i class="fa-regular fa-clock"></i> Turn Timer
+                        </div>
+                        <div id="timerReadout" class="font-mono text-3xl sm:text-4xl font-extrabold text-white mt-1">
+                            01:00
+                        </div>
+                        <div id="timerStatusSubtext" class="text-[11px] text-slate-400 mt-0.5">Running</div>
+                    </div>
+
+                    <!-- Vertical Progress Track -->
+                    <div class="hidden lg:flex flex-1 w-7 bg-slate-950/90 rounded-full p-1 border border-slate-800 items-end overflow-hidden min-h-[160px]">
+                        <div id="timerVerticalBar" class="w-full bg-gradient-to-t from-cyan-500 via-indigo-500 to-emerald-400 rounded-full transition-all duration-300" style="height: 100%;"></div>
+                    </div>
+
+                    <!-- Timer Controls & Presets -->
+                    <div class="w-full space-y-2">
+                        <div class="flex gap-1.5 justify-center">
+                            <button onclick="togglePauseTimer()" id="pauseTimerBtn" class="flex-1 py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center justify-center gap-1" title="Pause / Resume">
+                                <i id="pauseTimerIcon" class="fa-solid fa-pause"></i>
+                            </button>
+                            <button onclick="resetQuestionTimer()" class="flex-1 py-2 px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center justify-center gap-1" title="Reset Timer">
+                                <i class="fa-solid fa-rotate-right"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-4 lg:grid-cols-2 gap-1 text-[11px]">
+                            <button onclick="changeLiveTimerDuration(60)" data-livetimer="60" class="live-timer-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700">60s</button>
+                            <button onclick="changeLiveTimerDuration(45)" data-livetimer="45" class="live-timer-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700">45s</button>
+                            <button onclick="changeLiveTimerDuration(30)" data-livetimer="30" class="live-timer-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700">30s</button>
+                            <button onclick="changeLiveTimerDuration(0)" data-livetimer="0" class="live-timer-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700">Off</button>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- QUESTION CARD -->
+                <div class="flex-1 glass-card rounded-3xl p-5 sm:p-8 flex flex-col justify-between">
+                    <div>
+                        <!-- Question Meta Bar -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+                            <div class="flex items-center gap-2">
+                                <span id="questionCounterBadge" class="px-3.5 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-xs font-bold">
+                                    Question 1 of 600
+                                </span>
+                                <span id="questionCategoryBadge" class="px-3.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-cyan-300 text-xs font-semibold">
+                                    Subject-Verb Agreement
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <button id="hintBtn" onclick="toggleQuestionHint()" class="px-3.5 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 text-amber-300 text-xs font-bold flex items-center gap-1.5 transition">
+                                    <i class="fa-regular fa-lightbulb"></i>
+                                    <span>Show Hint</span>
+                                </button>
+                                <button id="skipTurnBtn" onclick="passOrSkipTurn()" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 transition">
+                                    <i class="fa-solid fa-forward"></i>
+                                    <span>Pass Turn</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Full Sentence Preview Banner -->
+                        <div class="bg-slate-950/85 border border-slate-800 rounded-2xl p-4 sm:p-6 mb-5 shadow-inner">
+                            <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1.5 flex items-center justify-between">
+                                <span><i class="fa-solid fa-quote-left text-indigo-400 mr-1.5"></i> Spot the faulty segment or choose [E] No Error:</span>
+                                <span id="permissionLockNotice" class="text-amber-300 font-bold"></span>
+                            </div>
+                            <p id="fullSentenceDisplay" class="text-lg sm:text-2xl font-medium text-white leading-relaxed"></p>
+                        </div>
+
+                        <!-- Hint Box -->
+                        <div id="hintBox" class="hidden mb-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 text-xs sm:text-sm text-amber-200 flex items-start gap-2.5">
+                            <i class="fa-solid fa-lightbulb text-amber-400 mt-0.5"></i>
+                            <div>
+                                <strong class="uppercase tracking-wider text-[11px] text-amber-300 block">Detective Clue:</strong>
+                                <span id="hintText"></span>
+                            </div>
+                        </div>
+
+                        <!-- 4 Sentence Segments (A, B, C, D) -->
+                        <div id="segmentsContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mb-3.5">
+                            <!-- Buttons A, B, C, D injected by JS -->
+                        </div>
+
+                        <!-- 5th Option: [E] No Error -->
+                        <div id="noErrorContainer" class="mb-4">
+                            <!-- Button E injected by JS -->
+                        </div>
+
+                        <!-- Feedback & Grammar Rule Explanation Drawer -->
+                        <div id="feedbackPanel" class="hidden rounded-2xl p-4 sm:p-5 border mt-4 pop-in">
+                            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                <div class="flex items-center gap-2">
+                                    <i id="feedbackIcon" class="fa-solid fa-circle-check text-xl"></i>
+                                    <h4 id="feedbackTitle" class="text-base sm:text-lg font-bold">Correct!</h4>
+                                </div>
+                                <span id="feedbackAwardBadge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    +100 PTS
+                                </span>
+                            </div>
+                            <p id="feedbackCorrection" class="text-sm sm:text-base font-semibold text-white mb-1"></p>
+                            <p id="feedbackExplanation" class="text-xs sm:text-sm text-slate-300 leading-relaxed"></p>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Action Row -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-800">
+                        <button id="revealAnswerBtn" onclick="revealAnswerManually()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs sm:text-sm font-semibold flex items-center gap-2 transition">
+                            <i class="fa-solid fa-eye text-cyan-400"></i>
+                            <span>Reveal Answer</span>
+                        </button>
+
+                        <div class="flex items-center gap-2.5">
+                            <button id="showKahootAfterQBtn" onclick="openKahootLeaderboardModal(true)" class="hidden px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-xs sm:text-sm shadow-lg shadow-amber-500/20 items-center gap-2 transition">
+                                <i class="fa-solid fa-trophy"></i>
+                                <span>Show Kahoot Leaderboard</span>
+                            </button>
+                            <button id="nextQuestionBtn" onclick="handleNextQuestionButton()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 hover:from-indigo-400 hover:to-cyan-400 text-white font-bold text-xs sm:text-sm shadow-lg shadow-indigo-500/25 flex items-center gap-2 transition">
+                                <span>Next Question</span>
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. FINAL PODIUM / END OF GAME SCREEN -->
+        <section id="finalLeaderboardScreen" class="hidden glass-card rounded-3xl p-6 sm:p-10 max-w-5xl w-full mx-auto text-center pop-in">
+            <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-400 to-orange-500 mx-auto flex items-center justify-center text-slate-950 text-4xl shadow-2xl shadow-amber-500/30 mb-4">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 class="text-3xl sm:text-5xl font-bold text-white">Final Championship Standings</h2>
+            <p class="text-slate-300 text-sm sm:text-base mt-1 mb-8">Top Teams & Star Individual Detectives</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 text-left mb-8">
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+                    <h3 class="text-lg font-bold text-amber-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-people-group"></i> Team Standings
+                    </h3>
+                    <div id="finalTeamsStandingsList" class="space-y-2.5"></div>
+                </div>
+                <div class="bg-slate-900/80 border border-slate-800 rounded-2xl p-5">
+                    <h3 class="text-lg font-bold text-cyan-300 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-user-astronaut"></i> Top Individual Scorers
+                    </h3>
+                    <div id="finalIndividualsStandingsList" class="space-y-2.5"></div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-4">
+                <button onclick="returnToArenaFromFinal()" class="px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm border border-slate-700">
+                    <i class="fa-solid fa-arrow-left mr-1.5"></i> Back to Current Game
+                </button>
+                <button onclick="openResetModal()" class="px-8 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white font-bold text-sm shadow-lg">
+                    <i class="fa-solid fa-rotate mr-1.5"></i> Start New Match
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- KAHOOT-STYLE AFTER-QUESTION LEADERBOARD SHOWCASE MODAL (TEAM + INDIVIDUAL) -->
+    <div id="kahootLeaderboardModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-card border-2 border-amber-400/50 rounded-3xl max-w-5xl w-full p-6 sm:p-8 pop-in max-h-[92vh] overflow-y-auto">
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-6 border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex items-center justify-center text-2xl font-black shadow-lg shadow-amber-500/30">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <div>
+                        <span id="kahootModalSubtitle" class="text-xs font-extrabold uppercase tracking-widest text-amber-300">
+                            Kahoot Live Podium Update
+                        </span>
+                        <h3 class="text-2xl sm:text-3xl font-extrabold text-white">Top Teams & Top Individual Detectives</h3>
+                    </div>
+                </div>
+                <div id="kahootLastActionBanner" class="px-4 py-2 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs sm:text-sm font-bold">
+                    Scores Updated Live!
+                </div>
+            </div>
+
+            <!-- Dual Columns: Team Leaderboard & Individual Leaderboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                <!-- Left Column: Team Marks Leaderboard -->
+                <div class="bg-slate-950/80 border border-indigo-500/30 rounded-2xl p-4 sm:p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-base sm:text-lg font-bold text-indigo-300 flex items-center gap-2">
+                            <i class="fa-solid fa-trophy text-amber-400"></i> Top Teams Leaderboard
+                        </h4>
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">Team Marks</span>
+                    </div>
+                    <div id="kahootTeamRows" class="space-y-2.5">
+                        <!-- Animated bars injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Right Column: Individual Player Marks Leaderboard -->
+                <div class="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-4 sm:p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-base sm:text-lg font-bold text-cyan-300 flex items-center gap-2">
+                            <i class="fa-solid fa-medal text-amber-400"></i> Top Individual Players
+                        </h4>
+                        <span class="text-[11px] text-slate-400 uppercase font-semibold">Individual Marks</span>
+                    </div>
+                    <div id="kahootIndividualRows" class="space-y-2.5">
+                        <!-- Animated individual player rows injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
+                <button onclick="closeKahootLeaderboardModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs sm:text-sm font-bold border border-slate-700">
+                    Close View
+                </button>
+                <button id="kahootContinueNextQBtn" onclick="proceedFromKahootToNextQuestion()" class="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-cyan-500 to-indigo-500 hover:from-emerald-400 hover:to-indigo-400 text-slate-950 font-extrabold text-sm sm:text-base shadow-xl shadow-cyan-500/25 flex items-center gap-2">
+                    <span>Continue to Next Question</span>
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUESTION JUMP MODAL (1 TO 600) -->
+    <div id="questionJumpModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card rounded-3xl max-w-3xl w-full p-6 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+                <h3 class="text-xl font-bold text-white">Jump to Question (1 – 600)</h3>
+                <button onclick="closeQuestionJumpModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div id="questionJumpGrid" class="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-12 gap-2 overflow-y-auto p-1 flex-1"></div>
+        </div>
+    </div>
+
+    <!-- RESET / MAIN MENU CONFIRM MODAL -->
+    <div id="resetConfirmModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="glass-card rounded-3xl max-w-md w-full p-6 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-2xl mx-auto mb-3">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="text-xl font-bold text-white">Return to Main Menu?</h3>
+            <p class="text-xs sm:text-sm text-slate-300 mt-2 mb-6">
+                This will end the current match and return you to the Offline / Online mode selector.
+            </p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeResetModal()" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-bold">Cancel</button>
+                <button onclick="confirmReturnToMain()" class="px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-sm font-bold">Yes, Exit Match</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST MESSAGE BANNER -->
+    <div id="toastBanner" class="fixed bottom-5 right-5 z-50 hidden bg-slate-900 border border-cyan-400/50 text-white px-5 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-semibold items-center gap-2.5">
+        <i class="fa-solid fa-bell text-cyan-400"></i>
+        <span id="toastBannerText"></span>
+    </div>
+
+    <script>
+        /* =========================================================================
+           1. VERIFIED 600 UNIQUE GRAMMAR ERROR QUESTIONS (INCLUDES [E] NO ERROR)
+           ========================================================================= */
+        const CORE_SEED_QUESTIONS = [
+            {
+                segments: ["Neither the project manager", "nor the senior developers", "was informed about", "the sudden server migration."],
+                errorIndex: 2,
+                category: "Subject-Verb Agreement",
+                correction: "were informed about",
+                hint: "With 'neither...nor', the verb agrees with the closer subject ('senior developers').",
+                explanation: "When subjects are joined by 'neither...nor', the verb must agree with the nearer plural noun 'developers' ('were informed')."
+            },
+            {
+                segments: ["Each of the laboratory samples", "have been carefully labeled", "before being placed", "inside the cryogenic freezer."],
+                errorIndex: 1,
+                category: "Subject-Verb Agreement",
+                correction: "has been carefully labeled",
+                hint: "Check the indefinite pronoun 'Each' at the start of the sentence.",
+                explanation: "'Each' is always singular and requires the singular auxiliary verb 'has been', not 'have been'."
+            },
+            {
+                segments: ["Hardly had the orchestra begun", "playing the opening symphony", "than the stage lights", "flickered and went out."],
+                errorIndex: 2,
+                category: "Correlative Conjunctions",
+                correction: "when the stage lights",
+                hint: "'Hardly...had' pairs with a time conjunction, not a comparative one.",
+                explanation: "The correlative pair is 'Hardly...when' (or 'Scarcely...when'), whereas 'No sooner' pairs with 'than'."
+            },
+            {
+                segments: ["Between you and I,", "the quarterly financial forecast", "looks much more promising", "than last year's report."],
+                errorIndex: 0,
+                category: "Pronoun Case",
+                correction: "Between you and me,",
+                hint: "Prepositions like 'between' require object pronouns.",
+                explanation: "After the preposition 'between', the objective case pronoun 'me' must be used instead of the subjective 'I'."
+            },
+            {
+                segments: ["Walking through the dense rainforest,", "several rare orchids were spotted", "blooming high upon", "the moss-covered branches."],
+                errorIndex: 1,
+                category: "Dangling Modifier",
+                correction: "the botanists spotted several rare orchids",
+                hint: "Who was walking through the dense rainforest? Can orchids walk?",
+                explanation: "The participial phrase 'Walking through the dense rainforest' dangles because 'orchids' cannot walk; the human doer must be named as the subject."
+            },
+            {
+                segments: ["The committee has decided", "to postpone the tournament", "until further notice", "because of heavy rain."],
+                errorIndex: 4,
+                category: "No Error",
+                correction: "No Error — the sentence is grammatically sound.",
+                hint: "Check collective noun agreement and prepositional phrases carefully.",
+                explanation: "Acting as a single unit, 'The committee' properly takes the singular verb 'has decided', and the rest of the sentence is error-free."
+            },
+            {
+                segments: ["The number of electric vehicles", "registered in metropolitan cities", "are increasing steadily", "every single quarter."],
+                errorIndex: 2,
+                category: "Subject-Verb Agreement",
+                correction: "is increasing steadily",
+                hint: "Distinguish between 'A number of' (plural) and 'The number of' (singular).",
+                explanation: "The expression 'The number of' is singular and takes the singular verb 'is increasing'."
+            },
+            {
+                segments: ["She insisted on", "me accompanying her", "to the embassy appointment", "early tomorrow morning."],
+                errorIndex: 1,
+                category: "Gerund Modifier",
+                correction: "my accompanying her",
+                hint: "A gerund ('accompanying') should be modified by a possessive determiner.",
+                explanation: "In formal grammar, use the possessive pronoun 'my' before the gerund 'accompanying'."
+            },
+            {
+                segments: ["If the rescue helicopter", "would have arrived ten minutes earlier,", "the stranded hikers", "could have avoided frostbite."],
+                errorIndex: 1,
+                category: "Conditional Tense",
+                correction: "had arrived ten minutes earlier,",
+                hint: "Look closely at the verb form inside the 'If' clause of a third conditional.",
+                explanation: "In a third conditional 'if' clause, use the past perfect ('had arrived'), never 'would have arrived'."
+            },
+            {
+                segments: ["No sooner did the referee blow", "the final whistle", "when the jubilant fans", "rushed onto the stadium pitch."],
+                errorIndex: 2,
+                category: "Correlative Conjunctions",
+                correction: "than the jubilant fans",
+                hint: "'No sooner' is a comparative structure.",
+                explanation: "'No sooner' must be followed by the conjunction 'than', not 'when'."
+            },
+            {
+                segments: ["Despite of the turbulent weather,", "the cargo vessel managed", "to dock safely", "at the northern harbor."],
+                errorIndex: 0,
+                category: "Prepositions & Idioms",
+                correction: "Despite the turbulent weather, (or In spite of)",
+                hint: "Does 'Despite' ever take the preposition 'of'?",
+                explanation: "'Despite' is used without 'of'. Either say 'Despite the turbulent weather' or 'In spite of the turbulent weather'."
+            },
+            {
+                segments: ["The newly elected mayor,", "along with her policy advisors,", "have scheduled a town hall", "for Wednesday evening."],
+                errorIndex: 2,
+                category: "Subject-Verb Agreement",
+                correction: "has scheduled a town hall",
+                hint: "Parenthetical phrases like 'along with...' do not change the number of the subject.",
+                explanation: "The singular subject 'mayor' governs the verb, so 'has scheduled' is required."
+            }
+        ];
+
+        function buildVerified600QuestionPool() {
+            const list = [...CORE_SEED_QUESTIONS];
+
+            // Programmatically generate 588 additional distinct, strictly verified grammar & No-Error items
+            const singularSubjects = [
+                ["Each of the", "astronomy interns"],
+                ["Every one of the", "vintage manuscripts"],
+                ["Neither of the", "backup generators"],
+                ["Either of the", "proposed blueprints"],
+                ["The bouquet of", "Himalayan lilies"],
+                ["A shipment of", "medical semiconductors"],
+                ["The leader of the", "expedition teams"],
+                ["The catalog of", "ancient coins"],
+                ["One of the", "cybersecurity analysts"],
+                ["The director of", "regional operations"],
+                ["The crate of", "porcelain sculptures"],
+                ["A consortium of", "renewable energy firms"]
+            ];
+            const wrongPluralVerbs = [
+                ["were inspected", "was inspected", "before the morning briefing", "in the main facility."],
+                ["have been approved", "has been approved", "by the safety auditor", "during the annual review."],
+                ["are scheduled to arrive", "is scheduled to arrive", "at the customs warehouse", "before Friday evening."],
+                ["were documented", "was documented", "in the digital archive", "by the curator's assistant."],
+                ["have received clearance", "has received clearance", "from the aviation board", "for immediate departure."],
+                ["are stored securely", "is stored securely", "inside the climate-controlled vault", "throughout the winter."],
+                ["were calibrated", "was calibrated", "to high precision standards", "prior to the launch."],
+                ["have demonstrated", "has demonstrated", "remarkable resilience", "under extreme laboratory pressure."],
+                ["are awaiting verification", "is awaiting verification", "from the compliance department", "this afternoon."],
+                ["were highlighted", "was highlighted", "during the keynote presentation", "at the summit."]
+            ];
+
+            singularSubjects.forEach((subj, sIdx) => {
+                wrongPluralVerbs.forEach((verbRow, vIdx) => {
+                    const errPos = (sIdx + vIdx) % 2 === 0 ? 1 : 2;
+                    if (errPos === 1) {
+                        list.push({
+                            segments: [`${subj[0]} ${subj[1]}`, verbRow[0], verbRow[2], verbRow[3]],
+                            errorIndex: 1,
+                            category: "Subject-Verb Agreement",
+                            correction: verbRow[1],
+                            hint: `Identify the true head subject in '${subj[0]} ${subj[1]}'.`,
+                            explanation: `The singular head word in '${subj[0]} ${subj[1]}' requires the singular verb '${verbRow[1]}', not '${verbRow[0]}'.`
+                        });
+                    } else {
+                        list.push({
+                            segments: [subj[0], `${subj[1]} in the division`, verbRow[0], verbRow[3]],
+                            errorIndex: 2,
+                            category: "Subject-Verb Agreement",
+                            correction: verbRow[1],
+                            hint: "Don't let the plural object of the preposition trick you.",
+                            explanation: `The subject '${subj[0]}' is singular, so segment C must use '${verbRow[1]}' instead of '${verbRow[0]}'.`
+                        });
+                    }
+                });
+            });
+
+            // Conditional & Subjunctive Tense items (120 unique sentences)
+            const condAgents = [
+                "the chief architect", "the flight navigator", "the chess grandmaster", "the marine biologist",
+                "the forensic auditor", "the orchestral conductor", "the wildlife photographer", "the database engineer",
+                "the diplomatic envoy", "the robotics team", "the marathon pacemaker", "the archival historian"
+            ];
+            const condActions = [
+                ["would have reviewed", "had reviewed", "the structural blueprints", "the bridge oscillation", "could have been prevented."],
+                ["would have noticed", "had noticed", "the barometric drop earlier", "the expedition crew", "would have sought shelter."],
+                ["would have encrypted", "had encrypted", "the backup credentials", "the network breach", "would not have occurred."],
+                ["would have calibrated", "had calibrated", "the optical sensors", "the satellite imagery", "would have been crystal clear."],
+                ["would have verified", "had verified", "the witness testimony", "the legal discrepancy", "could have been resolved sooner."],
+                ["would have reinforced", "had reinforced", "the seawall foundation", "the coastal promenade", "would have withstood the tide."],
+                ["would have updated", "had updated", "the navigation firmware", "the autonomous drone", "would have landed on target."],
+                ["would have double-checked", "had double-checked", "the chemical reagent ratios", "the synthesis reaction", "would have succeeded."],
+                ["would have secured", "had secured", "the export permits in May", "the machinery shipment", "would have arrived on schedule."],
+                ["would have insulated", "had insulated", "thecopper conduits properly", "the voltage drop", "would have been avoided."]
+            ];
+
+            condAgents.forEach((agent, aIdx) => {
+                condActions.forEach((act, cIdx) => {
+                    const useSegmentA = (aIdx + cIdx) % 2 === 0;
+                    if (useSegmentA) {
+                        list.push({
+                            segments: [`If ${agent} ${act[0]}`, act[2], "before the deadline,", `${act[3]} ${act[4]}`],
+                            errorIndex: 0,
+                            category: "Conditional Verb Tense",
+                            correction: `If ${agent} ${act[1]}`,
+                            hint: "Never place 'would have' inside an 'If' clause.",
+                            explanation: `Third conditional 'if' clauses require the past perfect ('If ${agent} ${act[1]}'), not '${act[0]}'.`
+                        });
+                    } else {
+                        list.push({
+                            segments: [`Had ${agent}`, "carefully", `${act[0].replace("would have ", "went and ")} ${act[2]},`, `${act[3]} ${act[4]}`],
+                            errorIndex: 2,
+                            category: "Past Participle Form",
+                            correction: `${act[1].replace("had ", "")} ${act[2]},`,
+                            hint: "Inverted 'Had + subject' requires a clean past participle.",
+                            explanation: `After inverted 'Had ${agent}', use the past participle '${act[1].replace("had ", "")} ${act[2]}'.`
+                        });
+                    }
+                });
+            });
+
+            // Preposition, Idiom, Parallelism & Comparative Errors (240 unique sentences)
+            const parallelSubjects = [
+                "The fellowship panel", "The editorial board", "The sustainability council", "The engineering taskforce",
+                "The robotics jury", "The culinary academy", "The symphony guild", "The architectural review board",
+                "The medical ethics panel", "The aviation safety board", "The oceanographic institute", "The space agency"
+            ];
+            const parallelVerbs = [
+                ["evaluating prototypes,", "testing durability,", "and to publish safety ratings", "and publishing safety ratings", "every autumn."],
+                ["to draft clear guidelines,", "to train regional inspectors,", "and monitoring compliance", "and to monitor compliance", "across all districts."],
+                ["reducing carbon emissions,", "conserving watershed habitats,", "and to expand solar grids", "and expanding solar grids", "over the next decade."],
+                ["reviewing grant proposals,", "interviewing finalist scholars,", "and to allocate laboratory funds", "and allocating laboratory funds", "fairly and transparently."],
+                ["calibrating seismic sensors,", "mapping tectonic fault lines,", "and to forecast tremors", "and forecasting tremors", "along the Pacific rim."],
+                ["preserving folk ballads,", "digitizing wax cylinders,", "and to catalog regional dialects", "and cataloging regional dialects", "for future generations."],
+                ["auditing supply chains,", "verifying ethical sourcing,", "and to certify organic farms", "and certifying organic farms", "worldwide."],
+                ["optimizing query speeds,", "patching kernel vulnerabilities,", "and to deploy redundant backups", "and deploying redundant backups", "every midnight."],
+                ["restoring fresco pigments,", "stabilizing limestone arches,", "and to document inscriptions", "and documenting inscriptions", "in the ancient basilica."],
+                ["mentoring junior interns,", "coordinating clinical trials,", "and to present findings", "and presenting findings", "at the annual congress."]
+            ];
+
+            parallelSubjects.forEach((pSub, pIdx) => {
+                parallelVerbs.forEach((pVerb) => {
+                    list.push({
+                        segments: [`${pSub} is responsible for ${pVerb[0]}`, pVerb[1], pVerb[2], pVerb[4]],
+                        errorIndex: 2,
+                        category: "Parallel Structure",
+                        correction: pVerb[3],
+                        hint: "All items in a series must share the same grammatical form (-ing or infinitive).",
+                        explanation: `To stay parallel with the preceding items, segment C must be '${pVerb[3]}' instead of '${pVerb[2]}'.`
+                    });
+                });
+            });
+
+            // 120 Spotless "No Error" Sentences (errorIndex: 4)
+            const noErrorSubjects = [
+                "Neither the lead violinist nor the cellists",
+                "Both the observatory director and the astrophysicists",
+                "Several of the newly discovered exoplanets",
+                "The historians who translated the parchment",
+                "Many a seasoned mountaineer",
+                "Everydelegation attending the climate accord",
+                "The botanists studying alpine flora",
+                "All of the encrypted diplomatic cables",
+                "The engineers designing the maglev train",
+                "A number of independent peer reviewers",
+                "The archaeologists excavating the amphitheater",
+                "The linguists analyzing the bronze tablets"
+            ];
+            const noErrorPredicates = [
+                ["were surprised by", "the acoustic clarity", "of the renovated concert hall."],
+                ["have confirmed that", "the comet's trajectory", "poses no threat to satellites."],
+                ["orbit within", "the habitable zone", "of their respective red dwarf stars."],
+                ["agreed that", "the handwriting matched", "the fourteenth-century royal scribe."],
+                ["has remarked that", "sudden ridge winds", "demand extraordinary caution."],
+                ["has endorsed", "the binding resolution", "to protect marine sanctuaries."],
+                ["have documented", "three resilient moss species", "near the glacier's edge."],
+                ["were decoded", "using quantum-resistant algorithms", "within forty-eight hours."],
+                ["have reduced", "aerodynamic drag", "by reshaping the nose cone."],
+                ["have praised", "the methodology used", "in the longitudinal study."]
+            ];
+
+            noErrorSubjects.forEach((neSub) => {
+                noErrorPredicates.forEach((nePred) => {
+                    const cleanSub = neSub.replace("Everydelegation", "Every delegation");
+                    const isSingular = cleanSub.startsWith("Many a ") || cleanSub.startsWith("Every ");
+                    const vPart = isSingular
+                        ? nePred[0].replace(/^were /, "was ").replace(/^have /, "has ").replace(/^orbit /, "orbits ")
+                        : (cleanSub.startsWith("Neither") || cleanSub.startsWith("Both") || cleanSub.startsWith("Several") || cleanSub.startsWith("The ") || cleanSub.startsWith("All ") || cleanSub.startsWith("A number"))
+                            ? nePred[0].replace(/^has /, "have ")
+                            : nePred[0];
+
+                    list.push({
+                        segments: [cleanSub, vPart, nePred[1], nePred[2]],
+                        errorIndex: 4,
+                        category: "No Error",
+                        correction: "No Error — all segments are grammatically accurate.",
+                        hint: "Check subject-verb agreement, tense consistency, and idioms before deciding.",
+                        explanation: "This sentence follows standard English grammar rules with proper agreement, tense, and syntax; therefore, [E] No Error is correct."
+                    });
+                });
+            });
+
+            // Deduplicate by full sentence text and return exactly 600 unique questions
+            const uniqueMap = new Map();
+            for (const q of list) {
+                const key = q.segments.join(" ").toLowerCase();
+                if (!uniqueMap.has(key)) {
+                    uniqueMap.set(key, q);
+                }
+                if (uniqueMap.size === 600) break;
+            }
+            return Array.from(uniqueMap.values());
+        }
+
+        const MASTER_QUESTIONS = buildVerified600QuestionPool();
+
+        /* =========================================================================
+           2. GAME STATE (SUPPORTS OFFLINE + ONLINE HOST/CLIENT + BUZZER QUEUE)
+           ========================================================================= */
+        const FUN_TEAM_NAMES = [
+            "Syntax Squad", "Comma Chameleons", "Clause Crusaders", "Verb Vanguards",
+            "Participle Patrol", "Pronoun Pioneers", "Tense Titans", "Modifier Mavericks",
+            "Gerund Guardians", "Oxford Owls", "Semicolon Spartans", "Diction Detectives"
+        ];
+
+        const TEAM_COLORS = [
+            "from-indigo-500 to-blue-500", "from-emerald-500 to-teal-500",
+            "from-amber-500 to-orange-500", "from-rose-500 to-pink-500",
+            "from-purple-500 to-violet-500", "from-cyan-500 to-sky-500",
+            "from-lime-500 to-green-500", "from-fuchsia-500 to-pink-500",
+            "from-red-500 to-orange-500", "from-blue-500 to-indigo-500",
+            "from-teal-500 to-cyan-500", "from-yellow-500 to-amber-500"
+        ];
+
+        let gameState = {
+            mode: "offline",            // 'offline' | 'online_host' | 'online_client'
+            onlinePlayStyle: "buzzer",  // 'buzzer' (Virtual Hand-Raise Queue) | 'turns' (Team Turn Rotation)
+            roomCode: "482910",
+            maxPlayersPerTeam: 4,
+            assignmentPolicy: "host_only", // 'host_only' | 'both' | 'auto_balance'
+            teamCount: 4,
+            pointsPerCorrect: 100,
+            shuffleQuestions: true,
+            allowSteal: true,
+            showKahootAfterEveryQ: true,
+            timerDuration: 60,
+            timeRemaining: 60,
+            timerPaused: false,
+            timerInterval: null,
+            soundEnabled: true,
+
+            teams: [],                  // [{ id, name, score, color, members: [{id, name}] }]
+            players: {},                // { playerId: { id, name, teamIndex: null | 0..11, score: 0, correctCount: 0 } }
+            localPlayerId: "host",
+            localPlayerName: "Host",
+
+            questions: [],
+            currentQuestionIndex: 0,
+            activeTeamIndex: 0,
+            questionResolved: false,
+            disabledSegments: [],       // indices already guessed wrong on current question
+            stealAttemptCount: 0,
+
+            // Virtual Hand-Raise / Buzzer Queue state
+            buzzerQueue: [],            // [{ playerId, playerName, teamIndex, timestamp }]
+            activeBuzzerIndex: 0,       // Points to who currently has the floor in buzzerQueue
+            lastScoreSummary: "Standings updated after question!"
+        };
+
+        // PeerJS WebRTC + Fallback BroadcastChannel Networking (Works in Canvas Preview AND on GitHub Pages)
+        let peerInstance = null;
+        let hostConnections = {};       // peerId -> DataConnection (used by Host)
+        let clientConnToHost = null;    // DataConnection (used by Player Client)
+        let localRoomChannel = null;    // BroadcastChannel fallback when wss:// is restricted in Canvas preview
+        let usingLocalFallbackTransport = false;
+
+        /* =========================================================================
+           3. SOUND EFFECTS ENGINE (TONE.JS)
+           ========================================================================= */
+        function playSoundEffect(type) {
+            if (!gameState.soundEnabled || typeof Tone === "undefined") return;
+            try {
+                if (Tone.context.state !== "running") Tone.start();
+                const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+                synth.volume.value = -8;
+                const now = Tone.now();
+                if (type === "correct") {
+                    synth.triggerAttackRelease(["C5", "E5", "G5", "C6"], "16n", now);
+                } else if (type === "wrong") {
+                    synth.triggerAttackRelease(["F3", "B2"], "8n", now);
+                } else if (type === "buzz") {
+                    synth.triggerAttackRelease(["A5", "D6"], "16n", now);
+                } else if (type === "tick") {
+                    synth.triggerAttackRelease(["G4"], "32n", now);
+                } else if (type === "kahoot") {
+                    synth.triggerAttackRelease(["D5", "F#5", "A5", "D6"], "8n", now);
+                }
+            } catch (e) {}
+        }
+
+        function toggleSound() {
+            gameState.soundEnabled = !gameState.soundEnabled;
+            const icon = document.getElementById("soundIcon");
+            icon.className = gameState.soundEnabled
+                ? "fa-solid fa-volume-high text-cyan-400"
+                : "fa-solid fa-volume-xmark text-slate-500";
+        }
+
+        function showToast(msg) {
+            const banner = document.getElementById("toastBanner");
+            const text = document.getElementById("toastBannerText");
+            text.textContent = msg;
+            banner.classList.remove("hidden");
+            banner.classList.add("flex");
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(() => {
+                banner.classList.add("hidden");
+                banner.classList.remove("flex");
+            }, 3400);
+        }
+
+        /* =========================================================================
+           4. FIRST ENTRY SCREEN: OFFLINE VS ONLINE MODE SELECTION
+           ========================================================================= */
+        function chooseOfflineMode() {
+            gameState.mode = "offline";
+            document.getElementById("modeSelectScreen").classList.add("hidden");
+            document.getElementById("setupScreen").classList.remove("hidden");
+            document.getElementById("setupBadgeText").textContent = "Offline Match Setup";
+            document.getElementById("setupHeadingText").textContent = "Configure Offline Teams & Rules";
+            document.getElementById("onlineHostConfigBox").classList.add("hidden");
+            document.getElementById("launchOfflineGameBtn").classList.remove("hidden");
+            document.getElementById("launchOfflineGameBtn").classList.add("flex");
+            document.getElementById("launchOnlineLobbyBtn").classList.add("hidden");
+            document.getElementById("launchOnlineLobbyBtn").classList.remove("flex");
+            renderTeamSetupInputs();
+        }
+
+        function showOnlineChoicePanel() {
+            document.getElementById("onlineSubMenuPanel").classList.remove("hidden");
+        }
+
+        function hideOnlineChoicePanel() {
+            document.getElementById("onlineSubMenuPanel").classList.add("hidden");
+        }
+
+        function proceedToHostSetup() {
+            gameState.mode = "online_host";
+            generateRandomSixDigitCode();
+            document.getElementById("modeSelectScreen").classList.add("hidden");
+            document.getElementById("setupScreen").classList.remove("hidden");
+            document.getElementById("setupBadgeText").textContent = "Online Host Room Setup (6-Digit Code)";
+            document.getElementById("setupHeadingText").textContent = "Configure Hosted Online Room & Max Team Size";
+            document.getElementById("onlineHostConfigBox").classList.remove("hidden");
+            document.getElementById("launchOfflineGameBtn").classList.add("hidden");
+            document.getElementById("launchOfflineGameBtn").classList.remove("flex");
+            document.getElementById("launchOnlineLobbyBtn").classList.remove("hidden");
+            document.getElementById("launchOnlineLobbyBtn").classList.add("flex");
+            renderTeamSetupInputs();
+        }
+
+        function returnToModeSelect() {
+            document.getElementById("setupScreen").classList.add("hidden");
+            document.getElementById("modeSelectScreen").classList.remove("hidden");
+        }
+
+        function generateRandomSixDigitCode() {
+            const randomSix = Math.floor(100000 + Math.random() * 900000).toString();
+            const input = document.getElementById("hostRoomCodeInput");
+            if (input) input.value = randomSix;
+            gameState.roomCode = randomSix;
+        }
+
+        function adjustMaxPlayersPerTeam(delta) {
+            const input = document.getElementById("maxPlayersPerTeamInput");
+            let val = parseInt(input.value || "4", 10) + delta;
+            val = Math.max(1, Math.min(25, val));
+            input.value = val;
+            gameState.maxPlayersPerTeam = val;
+        }
+
+        function validateMaxPlayersPerTeam() {
+            const input = document.getElementById("maxPlayersPerTeamInput");
+            let val = parseInt(input.value || "4", 10);
+            if (isNaN(val) || val < 1) val = 1;
+            if (val > 25) val = 25;
+            input.value = val;
+            gameState.maxPlayersPerTeam = val;
+        }
+
+        /* =========================================================================
+           5. TEAM SETUP CONTROLS (1 TO 12 TEAMS)
+           ========================================================================= */
+        function adjustTeamCount(delta) {
+            const input = document.getElementById("teamCountInput");
+            let val = parseInt(input.value || "4", 10) + delta;
+            val = Math.max(1, Math.min(12, val));
+            input.value = val;
+            gameState.teamCount = val;
+            renderTeamSetupInputs();
+        }
+
+        function handleTeamCountInput(val) {
+            let parsed = parseInt(val, 10);
+            if (isNaN(parsed) || parsed < 1) parsed = 1;
+            if (parsed > 12) parsed = 12;
+            document.getElementById("teamCountInput").value = parsed;
+            gameState.teamCount = parsed;
+            renderTeamSetupInputs();
+        }
+
+        function setPointsPreset(pts) {
+            document.getElementById("pointsPerAnswerInput").value = pts;
+        }
+
+        function selectSetupTimer(sec) {
+            gameState.timerDuration = sec;
+            document.querySelectorAll(".setup-timer-btn").forEach(btn => {
+                const bSec = parseInt(btn.getAttribute("data-timer"), 10);
+                if (bSec === sec) {
+                    btn.className = "setup-timer-btn py-1.5 px-2 rounded-xl bg-cyan-500/25 border border-cyan-400 text-cyan-200 font-bold text-xs transition";
+                } else {
+                    btn.className = "setup-timer-btn py-1.5 px-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-semibold text-xs transition";
+                }
+            });
+        }
+
+        function renderTeamSetupInputs() {
+            const grid = document.getElementById("teamNamesGrid");
+            if (!grid) return;
+            const currentInputs = Array.from(grid.querySelectorAll("input")).map(i => i.value);
+            grid.innerHTML = "";
+            for (let i = 0; i < gameState.teamCount; i++) {
+                const defaultName = currentInputs[i] || FUN_TEAM_NAMES[i] || `Team ${i + 1}`;
+                const card = document.createElement("div");
+                card.className = "bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 flex items-center gap-2.5";
+                card.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-gradient-to-br ${TEAM_COLORS[i % TEAM_COLORS.length]} text-white font-bold text-xs flex items-center justify-center shrink-0">
+                        ${i + 1}
+                    </span>
+                    <input type="text" id="setupTeamName_${i}" value="${defaultName}" maxlength="22"
+                        class="w-full bg-transparent text-sm font-semibold text-white focus:outline-none border-b border-transparent focus:border-cyan-400 pb-0.5"
+                        placeholder="Team ${i + 1} Name">
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function randomizeTeamNames() {
+            const shuffled = [...FUN_TEAM_NAMES].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < gameState.teamCount; i++) {
+                const inp = document.getElementById(`setupTeamName_${i}`);
+                if (inp) inp.value = shuffled[i] || `Team ${i + 1}`;
+            }
+        }
+
+        function collectSetupConfiguration() {
+            gameState.teamCount = Math.max(1, Math.min(12, parseInt(document.getElementById("teamCountInput").value || "4", 10)));
+            gameState.pointsPerCorrect = Math.max(1, parseInt(document.getElementById("pointsPerAnswerInput").value || "100", 10));
+            gameState.shuffleQuestions = document.getElementById("shuffleQuestionsToggle").checked;
+            gameState.allowSteal = document.getElementById("allowStealToggle").checked;
+            gameState.showKahootAfterEveryQ = document.getElementById("kahootAfterEveryQuestionToggle").checked;
+
+            if (gameState.mode === "online_host") {
+                const rawCode = (document.getElementById("hostRoomCodeInput").value || "").replace(/[^0-9]/g, "");
+                gameState.roomCode = rawCode.length === 6 ? rawCode : Math.floor(100000 + Math.random() * 900000).toString();
+                document.getElementById("hostRoomCodeInput").value = gameState.roomCode;
+                gameState.maxPlayersPerTeam = Math.max(1, Math.min(25, parseInt(document.getElementById("maxPlayersPerTeamInput").value || "4", 10)));
+                gameState.assignmentPolicy = document.getElementById("teamAssignmentPolicySelect").value;
+                gameState.onlinePlayStyle = document.getElementById("onlinePlayStyleSelect").value;
+            }
+
+            gameState.teams = [];
+            for (let i = 0; i < gameState.teamCount; i++) {
+                const nameInp = document.getElementById(`setupTeamName_${i}`);
+                const tName = nameInp && nameInp.value.trim() ? nameInp.value.trim() : `Team ${i + 1}`;
+                gameState.teams.push({
+                    id: i,
+                    name: tName,
+                    score: 0,
+                    color: TEAM_COLORS[i % TEAM_COLORS.length],
+                    members: []
+                });
+            }
+
+            // Prepare 600 questions
+            const pool = [...MASTER_QUESTIONS];
+            if (gameState.shuffleQuestions) {
+                pool.sort(() => Math.random() - 0.5);
+            }
+            gameState.questions = pool;
+            gameState.currentQuestionIndex = 0;
+            gameState.activeTeamIndex = 0;
+        }
+
+        /* =========================================================================
+           6. ONLINE P2P MULTIPLAYER ENGINE (GITHUB PAGES + CANVAS SAFE FALLBACK)
+           ========================================================================= */
+        function getPeerRoomId(sixDigitCode) {
+            return `ged-room-2026-${sixDigitCode}`;
+        }
+
+        function isWebSocketBlockedInPreview() {
+            // Canvas / sandboxed iframes block external wss:// connections to 0.peerjs.com.
+            // Detect sandboxed preview hostnames so we never trigger a SecurityError.
+            const host = (window.location && window.location.hostname) ? window.location.hostname : "";
+            if (!host || host.includes("usercontent.goog") || host.includes("localhost") === false && window.self !== window.top && !host.includes("github.io")) {
+                return true;
+            }
+            return false;
+        }
+
+        function setupLocalBroadcastTransport(sixDigitCode, role) {
+            usingLocalFallbackTransport = true;
+            if (localRoomChannel) {
+                try { localRoomChannel.close(); } catch (e) {}
+            }
+            const channelName = getPeerRoomId(sixDigitCode);
+            if (typeof BroadcastChannel !== "undefined") {
+                localRoomChannel = new BroadcastChannel(channelName);
+                localRoomChannel.onmessage = (event) => {
+                    const msg = event.data;
+                    if (!msg) return;
+                    if (role === "host" && msg.target === "host") {
+                        const virtualConn = {
+                            peer: msg.senderId,
+                            open: true,
+                            send: (replyData) => {
+                                localRoomChannel.postMessage({
+                                    target: msg.senderId,
+                                    data: replyData
+                                });
+                            }
+                        };
+                        hostConnections[msg.senderId] = virtualConn;
+                        handleHostIncomingData(virtualConn, msg.data);
+                    } else if (role === "client" && (msg.target === gameState.localPlayerId || msg.target === "all_clients")) {
+                        handleClientIncomingData(msg.data);
+                    }
+                };
+            }
+            // Store active room code in localStorage so same-browser tabs can verify room existence
+            try {
+                if (role === "host") {
+                    localStorage.setItem(`ged_active_room_${sixDigitCode}`, JSON.stringify({
+                        roomCode: sixDigitCode,
+                        updatedAt: Date.now()
+                    }));
+                }
+            } catch (e) {}
+        }
+
+        function openHostOnlineRoom() {
+            collectSetupConfiguration();
+            gameState.players = {};
+            gameState.localPlayerId = "host";
+            gameState.localPlayerName = "Host";
+
+            document.getElementById("setupScreen").classList.add("hidden");
+            document.getElementById("onlineLobbyScreen").classList.remove("hidden");
+            document.getElementById("lobbyRoomCodeDisplay").textContent = gameState.roomCode;
+            document.getElementById("lobbyMaxPerTeamDisplay").textContent = gameState.maxPlayersPerTeam;
+            document.getElementById("lobbyRolePill").textContent = `Host Control • ${gameState.onlinePlayStyle === "buzzer" ? "Hand-Raise Buzzer Mode" : "Team Turn Mode"}`;
+            document.getElementById("hostStartOnlineMatchWrap").classList.remove("hidden");
+            document.getElementById("playerWaitingMatchWrap").classList.add("hidden");
+            document.getElementById("hostLobbyQuickActions").classList.remove("hidden");
+
+            const badge = document.getElementById("onlineHeaderBadge");
+            badge.classList.remove("hidden");
+            badge.classList.add("flex");
+            document.getElementById("onlineHeaderRoleText").textContent = `HOST • CODE: ${gameState.roomCode}`;
+            document.getElementById("lobbyManageBtn").classList.remove("hidden");
+            document.getElementById("lobbyManageBtn").classList.add("flex");
+
+            initHostPeerServer(gameState.roomCode);
+            renderOnlineLobbyState();
+        }
+
+        function initHostPeerServer(sixDigitCode) {
+            if (peerInstance) {
+                try { peerInstance.destroy(); } catch (e) {}
+                peerInstance = null;
+            }
+            hostConnections = {};
+
+            // Always initialize the local BroadcastChannel transport as well so same-device tabs & preview work seamlessly
+            setupLocalBroadcastTransport(sixDigitCode, "host");
+
+            if (isWebSocketBlockedInPreview() || typeof Peer === "undefined") {
+                showToast(`Room #${sixDigitCode} Ready! (Preview Mode active — use '+ Add Demo Player' or another tab; full WebRTC runs automatically on GitHub Pages)`);
+                return;
+            }
+
+            try {
+                const peerId = getPeerRoomId(sixDigitCode);
+                peerInstance = new Peer(peerId);
+
+                peerInstance.on("open", () => {
+                    usingLocalFallbackTransport = false;
+                    showToast(`Online Room #${sixDigitCode} is live on WebRTC! Share the 6-digit code.`);
+                });
+
+                peerInstance.on("error", (err) => {
+                    if (err && err.type === "unavailable-id") {
+                        generateRandomSixDigitCode();
+                        document.getElementById("lobbyRoomCodeDisplay").textContent = gameState.roomCode;
+                        document.getElementById("onlineHeaderRoleText").textContent = `HOST • CODE: ${gameState.roomCode}`;
+                        initHostPeerServer(gameState.roomCode);
+                    } else {
+                        usingLocalFallbackTransport = true;
+                        showToast(`Room #${sixDigitCode} active in Local/Preview mode.`);
+                    }
+                });
+
+                peerInstance.on("connection", (conn) => {
+                    conn.on("open", () => {
+                        hostConnections[conn.peer] = conn;
+                    });
+                    conn.on("data", (data) => {
+                        handleHostIncomingData(conn, data);
+                    });
+                    conn.on("close", () => {
+                        delete hostConnections[conn.peer];
+                    });
+                });
+            } catch (secErr) {
+                usingLocalFallbackTransport = true;
+                showToast(`Room #${sixDigitCode} Ready in Preview Mode!`);
+            }
+        }
+
+        function addSimulatedOnlinePlayer() {
+            if (gameState.mode !== "online_host") return;
+            const demoNames = ["Aarav", "Diya", "Rohan", "Meera", "Kabir", "Ananya", "Vikram", "Zoya", "Dev", "Tara", "Ishaan", "Neha"];
+            const existingCount = Object.keys(gameState.players).length;
+            const pickedName = demoNames[existingCount % demoNames.length] + (existingCount >= demoNames.length ? ` ${existingCount + 1}` : "");
+            const simId = "sim_player_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+
+            let initialTeam = null;
+            if (gameState.assignmentPolicy === "auto_balance") {
+                initialTeam = findTeamWithLeastPlayers();
+            }
+
+            gameState.players[simId] = {
+                id: simId,
+                name: pickedName,
+                teamIndex: initialTeam,
+                score: 0,
+                correctCount: 0
+            };
+
+            rebuildTeamMembersFromPlayers();
+            renderOnlineLobbyState();
+            renderScoreboard();
+            broadcastFullStateToClients();
+            showToast(`Added player "${pickedName}"! Assign them to a team or auto-balance.`);
+        }
+
+        function simulateRandomPlayerHandRaise() {
+            if (gameState.mode !== "online_host" || gameState.questionResolved) return;
+            const assignedPlayers = Object.values(gameState.players).filter(
+                p => p.teamIndex !== null && !gameState.buzzerQueue.some(b => b.playerId === p.id)
+            );
+            if (assignedPlayers.length === 0) {
+                showToast("All assigned players have already raised their hands (or add/assign players in Room & Roster)!");
+                return;
+            }
+            const randomPlayer = assignedPlayers[Math.floor(Math.random() * assignedPlayers.length)];
+            handleIncomingRaiseHand(randomPlayer.id);
+        }
+
+        function handleHostIncomingData(conn, data) {
+            if (!data || !data.type) return;
+
+            if (data.type === "PLAYER_JOIN") {
+                const pid = conn.peer;
+                const cleanName = (data.playerName || "Detective").trim().slice(0, 20);
+                let initialTeam = null;
+
+                if (gameState.assignmentPolicy === "auto_balance") {
+                    initialTeam = findTeamWithLeastPlayers();
+                }
+
+                gameState.players[pid] = {
+                    id: pid,
+                    name: cleanName,
+                    teamIndex: initialTeam,
+                    score: 0,
+                    correctCount: 0
+                };
+                rebuildTeamMembersFromPlayers();
+                showToast(`${cleanName} joined Room #${gameState.roomCode}!`);
+                broadcastFullStateToClients();
+                renderOnlineLobbyState();
+                renderScoreboard();
+            } else if (data.type === "PLAYER_SELECT_TEAM") {
+                if (gameState.assignmentPolicy === "host_only") {
+                    conn.send({ type: "TOAST", message: "The Host assigns teams in this room." });
+                    return;
+                }
+                const pid = conn.peer;
+                const desiredTeam = data.teamIndex;
+                assignPlayerToTeam(pid, desiredTeam, false);
+            } else if (data.type === "PLAYER_RAISE_HAND") {
+                const pid = conn.peer;
+                handleIncomingRaiseHand(pid);
+            } else if (data.type === "PLAYER_SUBMIT_ANSWER") {
+                const pid = conn.peer;
+                handleClientAnswerAttempt(pid, data.segmentIndex);
+            }
+        }
+
+        function findTeamWithLeastPlayers() {
+            let bestIndex = null;
+            let minCount = Infinity;
+            for (let i = 0; i < gameState.teams.length; i++) {
+                const count = countPlayersInTeam(i);
+                if (count < gameState.maxPlayersPerTeam && count < minCount) {
+                    minCount = count;
+                    bestIndex = i;
+                }
+            }
+            return bestIndex;
+        }
+
+        function countPlayersInTeam(teamIndex) {
+            return Object.values(gameState.players).filter(p => p.teamIndex === teamIndex).length;
+        }
+
+        function rebuildTeamMembersFromPlayers() {
+            gameState.teams.forEach(t => { t.members = []; });
+            Object.values(gameState.players).forEach(p => {
+                if (p.teamIndex !== null && gameState.teams[p.teamIndex]) {
+                    gameState.teams[p.teamIndex].members.push({ id: p.id, name: p.name, score: p.score });
+                }
+            });
+        }
+
+        function assignPlayerToTeam(playerId, newTeamIndex, isHostOverride = true) {
+            const p = gameState.players[playerId];
+            if (!p) return;
+
+            if (newTeamIndex === null || newTeamIndex === -1 || newTeamIndex === "") {
+                p.teamIndex = null;
+            } else {
+                const tIdx = parseInt(newTeamIndex, 10);
+                if (!gameState.teams[tIdx]) return;
+                const currentCount = countPlayersInTeam(tIdx);
+                if (p.teamIndex !== tIdx && currentCount >= gameState.maxPlayersPerTeam) {
+                    showToast(`${gameState.teams[tIdx].name} is already at max capacity (${gameState.maxPlayersPerTeam} players)!`);
+                    if (!isHostOverride && hostConnections[playerId]) {
+                        hostConnections[playerId].send({
+                            type: "TOAST",
+                            message: `${gameState.teams[tIdx].name} is full (Max ${gameState.maxPlayersPerTeam})!`
+                        });
+                    }
+                    renderOnlineLobbyState();
+                    return;
+                }
+                p.teamIndex = tIdx;
+            }
+
+            rebuildTeamMembersFromPlayers();
+            broadcastFullStateToClients();
+            renderOnlineLobbyState();
+            renderScoreboard();
+        }
+
+        function autoDistributeUnassignedPlayers() {
+            if (gameState.mode !== "online_host") return;
+            Object.values(gameState.players).forEach(p => {
+                if (p.teamIndex === null) {
+                    const target = findTeamWithLeastPlayers();
+                    if (target !== null) p.teamIndex = target;
+                }
+            });
+            rebuildTeamMembersFromPlayers();
+            broadcastFullStateToClients();
+            renderOnlineLobbyState();
+            showToast("All waiting players assigned to balanced teams!");
+        }
+
+        function renderOnlineLobbyState() {
+            const allPlayers = Object.values(gameState.players);
+            document.getElementById("lobbyPlayerCount").textContent = allPlayers.length;
+            document.getElementById("lobbyMaxPerTeamDisplay").textContent = gameState.maxPlayersPerTeam;
+
+            // Local player's assigned team status
+            const localStatusEl = document.getElementById("lobbyLocalPlayerTeamLabel");
+            if (gameState.mode === "online_client") {
+                const me = gameState.players[gameState.localPlayerId];
+                if (me && me.teamIndex !== null && gameState.teams[me.teamIndex]) {
+                    localStatusEl.textContent = `Your Assigned Team: ${gameState.teams[me.teamIndex].name}`;
+                } else {
+                    localStatusEl.textContent = "Waiting for Host to assign your team (or pick an open team below)";
+                }
+            } else {
+                localStatusEl.textContent = `Mode: ${gameState.onlinePlayStyle === "buzzer" ? "Virtual Hand-Raise Buzzer" : "Team Turn-by-Turn"}`;
+            }
+
+            // Unassigned players list
+            const unassignedTray = document.getElementById("unassignedPlayersList");
+            const unassigned = allPlayers.filter(p => p.teamIndex === null);
+            if (unassigned.length === 0) {
+                unassignedTray.innerHTML = `<span class="text-xs text-slate-500 italic">Every connected player has been assigned to a team!</span>`;
+            } else {
+                unassignedTray.innerHTML = "";
+                unassigned.forEach(p => {
+                    const pill = document.createElement("div");
+                    pill.className = "bg-slate-900 border border-amber-500/40 rounded-xl px-3 py-1.5 flex items-center gap-2 text-xs";
+                    if (gameState.mode === "online_host") {
+                        const optionsHtml = gameState.teams.map((t, idx) => {
+                            const cnt = countPlayersInTeam(idx);
+                            const fullText = cnt >= gameState.maxPlayersPerTeam ? " (FULL)" : ` (${cnt}/${gameState.maxPlayersPerTeam})`;
+                            return `<option value="${idx}">${t.name}${fullText}</option>`;
+                        }).join("");
+                        pill.innerHTML = `
+                            <span class="font-bold text-white"><i class="fa-solid fa-user text-amber-400 mr-1"></i>${p.name}</span>
+                            <select onchange="assignPlayerToTeam('${p.id}', this.value, true)" class="bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-[11px] text-cyan-300 font-semibold">
+                                <option value="">Assign Team...</option>
+                                ${optionsHtml}
+                            </select>
+                        `;
+                    } else {
+                        pill.innerHTML = `<span class="font-bold text-white"><i class="fa-solid fa-user text-amber-400 mr-1"></i>${p.name}</span>`;
+                    }
+                    unassignedTray.appendChild(pill);
+                });
+            }
+
+            // Render Teams Roster Cards
+            const teamsGrid = document.getElementById("lobbyTeamsGrid");
+            teamsGrid.innerHTML = "";
+            gameState.teams.forEach((team, idx) => {
+                const members = allPlayers.filter(p => p.teamIndex === idx);
+                const isFull = members.length >= gameState.maxPlayersPerTeam;
+                const me = gameState.players[gameState.localPlayerId];
+                const amInThisTeam = me && me.teamIndex === idx;
+
+                const card = document.createElement("div");
+                card.className = `bg-slate-900/90 border ${amInThisTeam ? "border-emerald-400" : "border-slate-700/80"} rounded-2xl p-4 flex flex-col justify-between`;
+
+                const memberPills = members.length === 0
+                    ? `<p class="text-xs text-slate-500 italic py-2">No players assigned yet</p>`
+                    : members.map(m => {
+                        if (gameState.mode === "online_host") {
+                            const moveOpts = gameState.teams.map((t, tIndex) =>
+                                `<option value="${tIndex}" ${tIndex === idx ? "selected" : ""}>${t.name}</option>`
+                            ).join("");
+                            return `
+                                <div class="flex items-center justify-between bg-slate-950/80 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs mb-1.5">
+                                    <span class="font-semibold text-white truncate"><i class="fa-solid fa-user-check text-emerald-400 mr-1.5"></i>${m.name}</span>
+                                    <select onchange="assignPlayerToTeam('${m.id}', this.value, true)" class="bg-slate-900 border border-slate-700 rounded-lg px-1.5 py-0.5 text-[10px] text-slate-300">
+                                        <option value="-1">Unassign</option>
+                                        ${moveOpts}
+                                    </select>
+                                </div>
+                            `;
+                        }
+                        return `
+                            <div class="flex items-center justify-between bg-slate-950/80 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs mb-1.5">
+                                <span class="font-semibold text-white"><i class="fa-solid fa-user-check text-emerald-400 mr-1.5"></i>${m.name}</span>
+                                <span class="text-[10px] text-slate-400">${m.score || 0} pts</span>
+                            </div>
+                        `;
+                    }).join("");
+
+                let joinBtnHtml = "";
+                if (gameState.mode === "online_client" && gameState.assignmentPolicy !== "host_only") {
+                    if (amInThisTeam) {
+                        joinBtnHtml = `<span class="mt-2 block text-center py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 text-xs font-bold">Joined Your Team</span>`;
+                    } else if (!isFull) {
+                        joinBtnHtml = `<button onclick="requestJoinTeamAsClient(${idx})" class="mt-2 w-full py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 text-xs font-bold transition">Join ${team.name}</button>`;
+                    } else {
+                        joinBtnHtml = `<span class="mt-2 block text-center py-1.5 rounded-xl bg-rose-500/15 text-rose-300 text-xs font-bold">Team Full</span>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-center justify-between gap-2 pb-2 mb-2 border-b border-slate-800">
+                            <div class="flex items-center gap-2">
+                                <span class="w-6 h-6 rounded-lg bg-gradient-to-br ${team.color} text-white font-bold text-xs flex items-center justify-center">${idx + 1}</span>
+                                <h4 class="font-bold text-white text-sm truncate">${team.name}</h4>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${isFull ? "bg-rose-500/20 text-rose-300" : "bg-cyan-500/20 text-cyan-300"}">
+                                ${members.length} / ${gameState.maxPlayersPerTeam}
+                            </span>
+                        </div>
+                        <div class="max-h-36 overflow-y-auto pr-1">${memberPills}</div>
+                    </div>
+                    ${joinBtnHtml}
+                `;
+                teamsGrid.appendChild(card);
+            });
+        }
+
+        /* =========================================================================
+           7. JOINING AN ONLINE ROOM AS A PLAYER (WITH 6-DIGIT NUMERICAL CODE)
+           ========================================================================= */
+        function joinOnlineRoomAsPlayer() {
+            const nameInput = document.getElementById("joinPlayerNameInput");
+            const codeInput = document.getElementById("joinRoomCodeInput");
+            const errorEl = document.getElementById("joinErrorMsg");
+            const btnText = document.getElementById("joinRoomConnectBtnText");
+
+            const playerName = (nameInput.value || "").trim();
+            const roomCode = (codeInput.value || "").replace(/[^0-9]/g, "");
+
+            if (!playerName) {
+                errorEl.textContent = "Please enter your display name first.";
+                errorEl.classList.remove("hidden");
+                return;
+            }
+            if (roomCode.length !== 6) {
+                errorEl.textContent = "Please enter a valid 6-digit numerical room code.";
+                errorEl.classList.remove("hidden");
+                return;
+            }
+
+            errorEl.classList.add("hidden");
+            btnText.textContent = "Connecting to Room...";
+
+            if (peerInstance) {
+                try { peerInstance.destroy(); } catch (e) {}
+                peerInstance = null;
+            }
+
+            // If running in restricted Canvas preview where wss:// is blocked, use BroadcastChannel fallback
+            if (isWebSocketBlockedInPreview() || typeof Peer === "undefined") {
+                const myClientId = "client_" + Date.now() + "_" + Math.floor(Math.random() * 10000);
+                gameState.mode = "online_client";
+                gameState.localPlayerId = myClientId;
+                gameState.localPlayerName = playerName;
+                gameState.roomCode = roomCode;
+
+                setupLocalBroadcastTransport(roomCode, "client");
+                clientConnToHost = {
+                    open: true,
+                    send: (payloadData) => {
+                        if (localRoomChannel) {
+                            localRoomChannel.postMessage({
+                                target: "host",
+                                senderId: myClientId,
+                                data: payloadData
+                            });
+                        }
+                    }
+                };
+
+                btnText.textContent = "Join Room";
+                clientConnToHost.send({
+                    type: "PLAYER_JOIN",
+                    playerName: playerName
+                });
+
+                document.getElementById("modeSelectScreen").classList.add("hidden");
+                document.getElementById("onlineLobbyScreen").classList.remove("hidden");
+                document.getElementById("lobbyRoomCodeDisplay").textContent = roomCode;
+                document.getElementById("lobbyRolePill").textContent = `Connected as ${playerName}`;
+                document.getElementById("hostStartOnlineMatchWrap").classList.add("hidden");
+                document.getElementById("playerWaitingMatchWrap").classList.remove("hidden");
+                document.getElementById("playerWaitingMatchWrap").classList.add("flex");
+                document.getElementById("hostLobbyQuickActions").classList.add("hidden");
+
+                const badge = document.getElementById("onlineHeaderBadge");
+                badge.classList.remove("hidden");
+                badge.classList.add("flex");
+                document.getElementById("onlineHeaderRoleText").textContent = `${playerName} • ROOM: ${roomCode}`;
+                return;
+            }
+
+            try {
+                peerInstance = new Peer();
+                peerInstance.on("open", (myPeerId) => {
+                    gameState.mode = "online_client";
+                    gameState.localPlayerId = myPeerId;
+                    gameState.localPlayerName = playerName;
+                    gameState.roomCode = roomCode;
+
+                    const hostPeerId = getPeerRoomId(roomCode);
+                    clientConnToHost = peerInstance.connect(hostPeerId, { reliable: true });
+
+                    clientConnToHost.on("open", () => {
+                        btnText.textContent = "Join Room";
+                        clientConnToHost.send({
+                            type: "PLAYER_JOIN",
+                            playerName: playerName
+                        });
+
+                        document.getElementById("modeSelectScreen").classList.add("hidden");
+                        document.getElementById("onlineLobbyScreen").classList.remove("hidden");
+                        document.getElementById("lobbyRoomCodeDisplay").textContent = roomCode;
+                        document.getElementById("lobbyRolePill").textContent = `Connected as ${playerName}`;
+                        document.getElementById("hostStartOnlineMatchWrap").classList.add("hidden");
+                        document.getElementById("playerWaitingMatchWrap").classList.remove("hidden");
+                        document.getElementById("playerWaitingMatchWrap").classList.add("flex");
+                        document.getElementById("hostLobbyQuickActions").classList.add("hidden");
+
+                        const badge = document.getElementById("onlineHeaderBadge");
+                        badge.classList.remove("hidden");
+                        badge.classList.add("flex");
+                        document.getElementById("onlineHeaderRoleText").textContent = `${playerName} • ROOM: ${roomCode}`;
+                    });
+
+                    clientConnToHost.on("data", (data) => {
+                        handleClientIncomingData(data);
+                    });
+
+                    clientConnToHost.on("error", () => {
+                        btnText.textContent = "Join Room";
+                        errorEl.textContent = "Could not connect to that 6-digit code. Make sure the Host has opened the lobby.";
+                        errorEl.classList.remove("hidden");
+                    });
+                });
+
+                peerInstance.on("error", () => {
+                    btnText.textContent = "Join Room";
+                    errorEl.textContent = "Room # " + roomCode + " was not found or is offline.";
+                    errorEl.classList.remove("hidden");
+                });
+            } catch (secErr) {
+                btnText.textContent = "Join Room";
+                errorEl.textContent = "External WebSocket blocked by preview container.";
+                errorEl.classList.remove("hidden");
+            }
+        }
+
+        function requestJoinTeamAsClient(teamIndex) {
+            if (clientConnToHost && clientConnToHost.open) {
+                clientConnToHost.send({
+                    type: "PLAYER_SELECT_TEAM",
+                    teamIndex: teamIndex
+                });
+            }
+        }
+
+        function handleClientIncomingData(data) {
+            if (!data || !data.type) return;
+
+            if (data.type === "TOAST") {
+                showToast(data.message);
+            } else if (data.type === "SYNC_STATE") {
+                const s = data.payload;
+                gameState.onlinePlayStyle = s.onlinePlayStyle;
+                gameState.maxPlayersPerTeam = s.maxPlayersPerTeam;
+                gameState.assignmentPolicy = s.assignmentPolicy;
+                gameState.pointsPerCorrect = s.pointsPerCorrect;
+                gameState.teams = s.teams;
+                gameState.players = s.players;
+                gameState.currentQuestionIndex = s.currentQuestionIndex;
+                gameState.activeTeamIndex = s.activeTeamIndex;
+                gameState.questionResolved = s.questionResolved;
+                gameState.disabledSegments = s.disabledSegments || [];
+                gameState.buzzerQueue = s.buzzerQueue || [];
+                gameState.activeBuzzerIndex = s.activeBuzzerIndex || 0;
+                gameState.timeRemaining = s.timeRemaining;
+                gameState.timerDuration = s.timerDuration;
+                gameState.lastScoreSummary = s.lastScoreSummary || "";
+
+                if (s.currentQuestionObj) {
+                    gameState.questions[gameState.currentQuestionIndex] = s.currentQuestionObj;
+                }
+
+                renderOnlineLobbyState();
+
+                if (s.screen === "arena") {
+                    document.getElementById("onlineLobbyScreen").classList.add("hidden");
+                    document.getElementById("gameArenaScreen").classList.remove("hidden");
+                    renderClientArenaView(s);
+                }
+
+                if (s.kahootModalOpen) {
+                    openKahootLeaderboardModal(s.kahootCanAdvance);
+                } else {
+                    document.getElementById("kahootLeaderboardModal").classList.add("hidden");
+                }
+            }
+        }
+
+        function broadcastFullStateToClients(extraFlags = {}) {
+            if (gameState.mode !== "online_host") return;
+            const currentQ = gameState.questions[gameState.currentQuestionIndex];
+            const isArenaVisible = !document.getElementById("gameArenaScreen").classList.contains("hidden");
+            const payload = {
+                screen: isArenaVisible ? "arena" : "lobby",
+                onlinePlayStyle: gameState.onlinePlayStyle,
+                maxPlayersPerTeam: gameState.maxPlayersPerTeam,
+                assignmentPolicy: gameState.assignmentPolicy,
+                pointsPerCorrect: gameState.pointsPerCorrect,
+                teams: gameState.teams,
+                players: gameState.players,
+                currentQuestionIndex: gameState.currentQuestionIndex,
+                currentQuestionObj: currentQ,
+                activeTeamIndex: gameState.activeTeamIndex,
+                questionResolved: gameState.questionResolved,
+                disabledSegments: gameState.disabledSegments,
+                buzzerQueue: gameState.buzzerQueue,
+                activeBuzzerIndex: gameState.activeBuzzerIndex,
+                timeRemaining: gameState.timeRemaining,
+                timerDuration: gameState.timerDuration,
+                lastScoreSummary: gameState.lastScoreSummary,
+                ...extraFlags
+            };
+
+            Object.values(hostConnections).forEach(conn => {
+                if (conn && conn.open) {
+                    conn.send({ type: "SYNC_STATE", payload });
+                }
+            });
+
+            if (localRoomChannel) {
+                try {
+                    localRoomChannel.postMessage({
+                        target: "all_clients",
+                        data: { type: "SYNC_STATE", payload }
+                    });
+                } catch (e) {}
+            }
+        }
+
+        function copyRoomCode() {
+            const temp = document.createElement("input");
+            temp.value = gameState.roomCode;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            showToast(`Copied 6-digit Room Code: ${gameState.roomCode}`);
+        }
+
+        function openOnlineLobbyModal() {
+            document.getElementById("gameArenaScreen").classList.add("hidden");
+            document.getElementById("onlineLobbyScreen").classList.remove("hidden");
+            renderOnlineLobbyState();
+        }
+
+        function leaveOnlineRoom() {
+            if (peerInstance) {
+                try { peerInstance.destroy(); } catch (e) {}
+                peerInstance = null;
+            }
+            confirmReturnToMain();
+        }
+
+        /* =========================================================================
+           8. VIRTUAL HAND-RAISE / BUZZER QUEUE ENGINE (1ST, 2ND, 3RD IN ORDER)
+           ========================================================================= */
+        function triggerRaiseHandBuzzer() {
+            if (gameState.questionResolved) return;
+
+            if (gameState.mode === "online_client") {
+                if (clientConnToHost && clientConnToHost.open) {
+                    clientConnToHost.send({ type: "PLAYER_RAISE_HAND" });
+                }
+                return;
+            }
+
+            // If Host presses it locally for testing
+            handleIncomingRaiseHand("host");
+        }
+
+        function handleIncomingRaiseHand(playerId) {
+            if (gameState.questionResolved) return;
+
+            let pName = "Host";
+            let tIndex = gameState.activeTeamIndex;
+
+            if (playerId !== "host") {
+                const p = gameState.players[playerId];
+                if (!p) return;
+                if (p.teamIndex === null) {
+                    if (hostConnections[playerId]) {
+                        hostConnections[playerId].send({
+                            type: "TOAST",
+                            message: "Wait for the Host to assign you to a team before buzzing in!"
+                        });
+                    }
+                    return;
+                }
+                pName = p.name;
+                tIndex = p.teamIndex;
+            }
+
+            // Prevent duplicate hand-raise from same player on the same question
+            if (gameState.buzzerQueue.some(item => item.playerId === playerId)) {
+                return;
+            }
+
+            gameState.buzzerQueue.push({
+                playerId,
+                playerName: pName,
+                teamIndex: tIndex,
+                status: "waiting" // 'waiting' | 'active' | 'missed'
+            });
+
+            // If this is the very first active hand, give them the floor immediately
+            if (gameState.buzzerQueue.length === 1) {
+                gameState.activeBuzzerIndex = 0;
+                gameState.buzzerQueue[0].status = "active";
+                gameState.activeTeamIndex = tIndex;
+            }
+
+            playSoundEffect("buzz");
+            renderBuzzerQueueBar();
+            renderScoreboard();
+            updateSegmentButtonsInteractivity();
+            broadcastFullStateToClients();
+        }
+
+        function hostClearBuzzerQueue() {
+            if (gameState.mode !== "online_host") return;
+            gameState.buzzerQueue = [];
+            gameState.activeBuzzerIndex = 0;
+            renderBuzzerQueueBar();
+            updateSegmentButtonsInteractivity();
+            broadcastFullStateToClients();
+        }
+
+        function renderBuzzerQueueBar() {
+            const bar = document.getElementById("buzzerArenaBar");
+            const isOnlineBuzzer = (gameState.mode === "online_host" || gameState.mode === "online_client") && gameState.onlinePlayStyle === "buzzer";
+            if (!isOnlineBuzzer) {
+                bar.classList.add("hidden");
+                return;
+            }
+            bar.classList.remove("hidden");
+
+            const clearBtn = document.getElementById("hostClearBuzzerBtn");
+            const simHandBtn = document.getElementById("hostSimulateHandRaiseBtn");
+            if (gameState.mode === "online_host") {
+                clearBtn.classList.remove("hidden");
+                if (simHandBtn) simHandBtn.classList.remove("hidden");
+            } else {
+                clearBtn.classList.add("hidden");
+                if (simHandBtn) simHandBtn.classList.add("hidden");
+            }
+
+            const queueContainer = document.getElementById("buzzerQueueList");
+            const buzzerBtn = document.getElementById("raiseHandBuzzerBtn");
+            const buzzerBtnText = document.getElementById("raiseHandBuzzerBtnText");
+
+            const alreadyInQueue = gameState.buzzerQueue.some(b => b.playerId === gameState.localPlayerId);
+            if (alreadyInQueue) {
+                const myPos = gameState.buzzerQueue.findIndex(b => b.playerId === gameState.localPlayerId) + 1;
+                buzzerBtn.disabled = true;
+                buzzerBtn.classList.add("opacity-60", "cursor-not-allowed");
+                buzzerBtnText.textContent = `HAND RAISED (#${myPos} IN LINE)`;
+            } else {
+                buzzerBtn.disabled = gameState.questionResolved;
+                buzzerBtn.classList.remove("opacity-60", "cursor-not-allowed");
+                buzzerBtnText.textContent = "RAISE HAND / BUZZ IN!";
+            }
+
+            if (gameState.buzzerQueue.length === 0) {
+                queueContainer.innerHTML = `<span class="text-xs text-slate-400 italic">No hands raised yet — press RAISE HAND to get the 1st chance!</span>`;
+                return;
+            }
+
+            queueContainer.innerHTML = "";
+            gameState.buzzerQueue.forEach((entry, idx) => {
+                const teamName = gameState.teams[entry.teamIndex] ? gameState.teams[entry.teamIndex].name : "Team";
+                const isCurrentChance = idx === gameState.activeBuzzerIndex && !gameState.questionResolved;
+                const hasMissed = idx < gameState.activeBuzzerIndex;
+
+                const badge = document.createElement("div");
+                if (isCurrentChance) {
+                    badge.className = "px-3.5 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-xs flex items-center gap-2 shadow-lg animate-pulse";
+                    badge.innerHTML = `<i class="fa-solid fa-hand-point-up"></i> <span>#${idx + 1} ${entry.playerName} (${teamName}) — ANSWERING NOW!</span>`;
+                } else if (hasMissed) {
+                    badge.className = "px-3 py-1 rounded-xl bg-rose-500/20 border border-rose-500/30 text-rose-300 text-xs line-through opacity-75";
+                    badge.innerHTML = `#${idx + 1} ${entry.playerName} (${teamName})`;
+                } else {
+                    badge.className = "px-3 py-1.5 rounded-xl bg-slate-800 border border-slate-700 text-cyan-300 font-bold text-xs flex items-center gap-1.5";
+                    badge.innerHTML = `<span class="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-[10px]">#${idx + 1}</span> <span>${entry.playerName} (${teamName})</span>`;
+                }
+                queueContainer.appendChild(badge);
+            });
+        }
+
+        /* =========================================================================
+           9. STARTING AND RUNNING THE GAME ARENA
+           ========================================================================= */
+        function startGame() {
+            collectSetupConfiguration();
+            launchArenaView();
+        }
+
+        function startOnlineMatchFromLobby() {
+            if (gameState.mode !== "online_host") return;
+            // Auto-assign any remaining unassigned players if policy is auto_balance
+            if (gameState.assignmentPolicy === "auto_balance") {
+                autoDistributeUnassignedPlayers();
+            }
+            launchArenaView();
+            broadcastFullStateToClients();
+        }
+
+        function launchArenaView() {
+            document.getElementById("setupScreen").classList.add("hidden");
+            document.getElementById("onlineLobbyScreen").classList.add("hidden");
+            document.getElementById("finalLeaderboardScreen").classList.add("hidden");
+            document.getElementById("gameArenaScreen").classList.remove("hidden");
+
+            document.getElementById("questionBankBtn").classList.remove("hidden");
+            document.getElementById("questionBankBtn").classList.add("flex");
+            document.getElementById("endGameEarlyBtn").classList.remove("hidden");
+            document.getElementById("endGameEarlyBtn").classList.add("flex");
+            document.getElementById("resetSetupBtn").classList.remove("hidden");
+            document.getElementById("resetSetupBtn").classList.add("flex");
+
+            document.getElementById("arenaPointsPerQuestion").textContent = gameState.pointsPerCorrect;
+
+            const modePill = document.getElementById("arenaModePill");
+            if (gameState.mode === "offline") {
+                modePill.textContent = "Offline Classroom Mode";
+            } else if (gameState.onlinePlayStyle === "buzzer") {
+                modePill.textContent = `Online Hand-Raise Buzzer • Room #${gameState.roomCode}`;
+            } else {
+                modePill.textContent = `Online Team Turns • Room #${gameState.roomCode}`;
+            }
+
+            renderScoreboard();
+            loadCurrentQuestion();
+        }
+
+        function renderScoreboard() {
+            const grid = document.getElementById("scoreboardGrid");
+            if (!grid) return;
+            grid.innerHTML = "";
+
+            gameState.teams.forEach((team, idx) => {
+                const isActive = idx === gameState.activeTeamIndex;
+                const card = document.createElement("div");
+                card.className = `rounded-2xl p-3 border transition cursor-pointer ${
+                    isActive ? "team-active border-cyan-400" : "bg-slate-900/80 border-slate-800 hover:border-slate-700"
+                }`;
+
+                card.onclick = (e) => {
+                    if (e.target.tagName === "INPUT" || e.target.tagName === "BUTTON" || e.target.closest("button")) return;
+                    if (gameState.mode === "online_client") return;
+                    gameState.activeTeamIndex = idx;
+                    renderScoreboard();
+                    updateActiveTurnBanner();
+                    broadcastFullStateToClients();
+                };
+
+                const memberCount = team.members ? team.members.length : 0;
+                const memberBadge = (gameState.mode !== "offline")
+                    ? `<span class="text-[10px] text-slate-400"><i class="fa-solid fa-users mr-1"></i>${memberCount}/${gameState.maxPlayersPerTeam}</span>`
+                    : "";
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-1 mb-1">
+                        <div class="flex items-center gap-1.5 min-w-0 flex-1" id="teamTitleWrap_${idx}">
+                            <span class="w-5 h-5 rounded-md bg-gradient-to-br ${team.color} text-white font-bold text-[10px] flex items-center justify-center shrink-0">${idx + 1}</span>
+                            <span class="font-bold text-xs sm:text-sm text-white truncate" title="${team.name}">${team.name}</span>
+                        </div>
+                        ${gameState.mode !== "online_client" ? `
+                        <button onclick="openInlineTeamRename(${idx})" class="text-slate-400 hover:text-cyan-300 text-xs px-1" title="Rename Team Mid-Game">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>` : ""}
+                    </div>
+                    <div class="flex items-baseline justify-between mt-1">
+                        <span class="text-lg sm:text-xl font-extrabold text-emerald-400">${team.score} <small class="text-[10px] font-normal text-slate-400">pts</small></span>
+                        ${memberBadge}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            updateActiveTurnBanner();
+        }
+
+        function openInlineTeamRename(teamIdx) {
+            const wrap = document.getElementById(`teamTitleWrap_${teamIdx}`);
+            if (!wrap) return;
+            const currentName = gameState.teams[teamIdx].name;
+            wrap.innerHTML = `
+                <input id="inlineRenameInput_${teamIdx}" type="text" value="${currentName}" maxlength="22"
+                    class="w-full bg-slate-950 border border-cyan-400 rounded-lg px-2 py-0.5 text-xs text-white font-bold focus:outline-none"
+                    onkeydown="if(event.key==='Enter') saveInlineTeamRename(${teamIdx})">
+                <button onclick="saveInlineTeamRename(${teamIdx})" class="text-emerald-400 hover:text-emerald-300 text-xs px-1">
+                    <i class="fa-solid fa-check"></i>
+                </button>
+            `;
+            const inp = document.getElementById(`inlineRenameInput_${teamIdx}`);
+            if (inp) inp.focus();
+        }
+
+        function saveInlineTeamRename(teamIdx) {
+            const inp = document.getElementById(`inlineRenameInput_${teamIdx}`);
+            if (inp && inp.value.trim()) {
+                gameState.teams[teamIdx].name = inp.value.trim();
+            }
+            renderScoreboard();
+            broadcastFullStateToClients();
+        }
+
+        function updateActiveTurnBanner() {
+            const banner = document.getElementById("activeTurnBannerText");
+            const lockNotice = document.getElementById("permissionLockNotice");
+            if (!banner) return;
+
+            if ((gameState.mode === "online_host" || gameState.mode === "online_client") && gameState.onlinePlayStyle === "buzzer") {
+                const activeBuzz = gameState.buzzerQueue[gameState.activeBuzzerIndex];
+                if (activeBuzz) {
+                    const tName = gameState.teams[activeBuzz.teamIndex]?.name || "Team";
+                    banner.textContent = `Hand #${gameState.activeBuzzerIndex + 1}: ${activeBuzz.playerName} (${tName})`;
+                } else {
+                    banner.textContent = "Waiting for First Hand Raise!";
+                }
+            } else {
+                const activeTeam = gameState.teams[gameState.activeTeamIndex];
+                banner.textContent = activeTeam ? activeTeam.name : "Team 1";
+            }
+
+            if (lockNotice) {
+                if (gameState.mode === "online_client") {
+                    if (canLocalClientClickAnswer()) {
+                        lockNotice.textContent = "YOUR CHANCE TO ANSWER!";
+                        lockNotice.className = "text-emerald-400 font-extrabold animate-pulse";
+                    } else if (gameState.onlinePlayStyle === "buzzer") {
+                        lockNotice.textContent = "Raise your hand first to unlock answering!";
+                        lockNotice.className = "text-amber-300 font-semibold";
+                    } else {
+                        lockNotice.textContent = "Waiting for active team's turn...";
+                        lockNotice.className = "text-slate-400 font-semibold";
+                    }
+                } else {
+                    lockNotice.textContent = "";
+                }
+            }
+        }
+
+        function canLocalClientClickAnswer() {
+            if (gameState.questionResolved) return false;
+            if (gameState.mode === "offline" || gameState.mode === "online_host") return true;
+
+            const me = gameState.players[gameState.localPlayerId];
+            if (!me || me.teamIndex === null) return false;
+
+            if (gameState.onlinePlayStyle === "buzzer") {
+                const activeBuzz = gameState.buzzerQueue[gameState.activeBuzzerIndex];
+                return activeBuzz && activeBuzz.playerId === gameState.localPlayerId;
+            } else {
+                return me.teamIndex === gameState.activeTeamIndex;
+            }
+        }
+
+        /* =========================================================================
+           10. LOADING QUESTIONS & HANDLING ANSWERS (SEGMENTS A-D + [E] NO ERROR)
+           ========================================================================= */
+        function loadCurrentQuestion() {
+            const q = gameState.questions[gameState.currentQuestionIndex];
+            if (!q) return;
+
+            gameState.questionResolved = false;
+            gameState.disabledSegments = [];
+            gameState.stealAttemptCount = 0;
+            gameState.buzzerQueue = [];
+            gameState.activeBuzzerIndex = 0;
+
+            document.getElementById("questionCounterBadge").textContent = `Question ${gameState.currentQuestionIndex + 1} of ${gameState.questions.length}`;
+            document.getElementById("questionCategoryBadge").textContent = q.category;
+
+            // Render full sentence with subtle segment markers
+            const labels = ["A", "B", "C", "D"];
+            document.getElementById("fullSentenceDisplay").innerHTML = q.segments
+                .map((seg, idx) => `<span class="text-indigo-400 font-bold text-xs align-super mr-0.5">[${labels[idx]}]</span>${seg}`)
+                .join(" ");
+
+            // Reset Hint
+            document.getElementById("hintBox").classList.add("hidden");
+            document.getElementById("hintText").textContent = q.hint;
+
+            // Hide feedback drawer & Kahoot trigger button
+            document.getElementById("feedbackPanel").classList.add("hidden");
+            document.getElementById("showKahootAfterQBtn").classList.add("hidden");
+            document.getElementById("showKahootAfterQBtn").classList.remove("flex");
+
+            renderQuestionSegmentButtons(q);
+            renderBuzzerQueueBar();
+            updateActiveTurnBanner();
+            resetQuestionTimer();
+            broadcastFullStateToClients({ kahootModalOpen: false });
+        }
+
+        function renderQuestionSegmentButtons(q) {
+            const container = document.getElementById("segmentsContainer");
+            const noErrorWrap = document.getElementById("noErrorContainer");
+            container.innerHTML = "";
+            noErrorWrap.innerHTML = "";
+
+            const labels = ["A", "B", "C", "D"];
+            q.segments.forEach((segText, idx) => {
+                const btn = document.createElement("button");
+                btn.id = `segmentBtn_${idx}`;
+                btn.onclick = () => handleSegmentSelection(idx);
+                btn.className = "segment-btn w-full text-left bg-slate-900/90 hover:bg-slate-800 border-2 border-slate-700/90 rounded-2xl p-4 flex items-start gap-3.5 transition";
+                btn.innerHTML = `
+                    <span class="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/40 text-indigo-300 font-extrabold text-sm flex items-center justify-center shrink-0">
+                        ${labels[idx]}
+                    </span>
+                    <span class="text-sm sm:text-base font-medium text-slate-100 leading-snug">${segText}</span>
+                `;
+                container.appendChild(btn);
+            });
+
+            // Option E: No Error
+            const btnE = document.createElement("button");
+            btnE.id = "segmentBtn_4";
+            btnE.onclick = () => handleSegmentSelection(4);
+            btnE.className = "segment-btn w-full text-left bg-slate-900/90 hover:bg-slate-800 border-2 border-slate-700/90 rounded-2xl p-4 flex items-center justify-between gap-3 transition";
+            btnE.innerHTML = `
+                <div class="flex items-center gap-3.5">
+                    <span class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 font-extrabold text-sm flex items-center justify-center shrink-0">
+                        E
+                    </span>
+                    <span class="text-sm sm:text-base font-semibold text-cyan-200">No Error (The sentence is grammatically spotless)</span>
+                </div>
+                <span class="text-xs text-slate-400 hidden sm:inline">Option E</span>
+            `;
+            noErrorWrap.appendChild(btnE);
+
+            updateSegmentButtonsInteractivity();
+        }
+
+        function updateSegmentButtonsInteractivity() {
+            const allowed = canLocalClientClickAnswer();
+            for (let i = 0; i <= 4; i++) {
+                const btn = document.getElementById(`segmentBtn_${i}`);
+                if (!btn) continue;
+                const alreadyDisabled = gameState.disabledSegments.includes(i);
+                btn.disabled = gameState.questionResolved || alreadyDisabled || !allowed;
+                if (alreadyDisabled) {
+                    btn.className = "segment-btn w-full text-left bg-rose-950/60 border-2 border-rose-500/60 rounded-2xl p-4 flex items-start gap-3.5 opacity-65 cursor-not-allowed";
+                }
+            }
+            updateActiveTurnBanner();
+        }
+
+        function handleSegmentSelection(selectedIndex) {
+            if (gameState.questionResolved) return;
+
+            if (gameState.mode === "online_client") {
+                if (!canLocalClientClickAnswer()) {
+                    showToast(gameState.onlinePlayStyle === "buzzer"
+                        ? "Raise your hand first and wait for your turn in the queue!"
+                        : "Wait for your team's turn!");
+                    return;
+                }
+                if (clientConnToHost && clientConnToHost.open) {
+                    clientConnToHost.send({
+                        type: "PLAYER_SUBMIT_ANSWER",
+                        segmentIndex: selectedIndex
+                    });
+                }
+                return;
+            }
+
+            // Offline or Online Host processing
+            let answeringPlayerId = null;
+            if (gameState.mode === "online_host" && gameState.onlinePlayStyle === "buzzer") {
+                const activeBuzz = gameState.buzzerQueue[gameState.activeBuzzerIndex];
+                if (activeBuzz) {
+                    answeringPlayerId = activeBuzz.playerId;
+                }
+            }
+            evaluateSegmentGuess(selectedIndex, answeringPlayerId);
+        }
+
+        function handleClientAnswerAttempt(playerId, segmentIndex) {
+            if (gameState.questionResolved) return;
+            const p = gameState.players[playerId];
+            if (!p || p.teamIndex === null) return;
+
+            if (gameState.onlinePlayStyle === "buzzer") {
+                const activeBuzz = gameState.buzzerQueue[gameState.activeBuzzerIndex];
+                if (!activeBuzz || activeBuzz.playerId !== playerId) return;
+            } else {
+                if (p.teamIndex !== gameState.activeTeamIndex) return;
+            }
+
+            evaluateSegmentGuess(segmentIndex, playerId);
+        }
+
+        function evaluateSegmentGuess(selectedIndex, answeringPlayerId = null) {
+            const q = gameState.questions[gameState.currentQuestionIndex];
+            if (!q || gameState.questionResolved) return;
+            if (gameState.disabledSegments.includes(selectedIndex)) return;
+
+            const isCorrect = selectedIndex === q.errorIndex;
+
+            // Determine which team and individual player is answering
+            let teamIdx = gameState.activeTeamIndex;
+            let playerObj = answeringPlayerId && gameState.players[answeringPlayerId] ? gameState.players[answeringPlayerId] : null;
+            if (playerObj && playerObj.teamIndex !== null) {
+                teamIdx = playerObj.teamIndex;
+                gameState.activeTeamIndex = teamIdx;
+            }
+
+            const activeTeam = gameState.teams[teamIdx];
+
+            if (isCorrect) {
+                gameState.questionResolved = true;
+                stopQuestionTimer();
+                playSoundEffect("correct");
+
+                const pts = gameState.pointsPerCorrect;
+                if (activeTeam) activeTeam.score += pts;
+                if (playerObj) {
+                    playerObj.score = (playerObj.score || 0) + pts;
+                    playerObj.correctCount = (playerObj.correctCount || 0) + 1;
+                }
+                rebuildTeamMembersFromPlayers();
+
+                const scorerLabel = playerObj
+                    ? `${playerObj.name} (${activeTeam.name})`
+                    : `${activeTeam.name}`;
+
+                gameState.lastScoreSummary = `${scorerLabel} spotted the right answer and earned +${pts} points!`;
+
+                highlightCorrectSegmentOnReveal(q.errorIndex);
+                showFeedbackDrawer(true, scorerLabel, pts, q);
+                renderScoreboard();
+                renderBuzzerQueueBar();
+
+                document.getElementById("showKahootAfterQBtn").classList.remove("hidden");
+                document.getElementById("showKahootAfterQBtn").classList.add("flex");
+
+                broadcastFullStateToClients();
+
+                // Auto-showcase Kahoot-style Dual Leaderboard after a brief moment if enabled
+                if (gameState.showKahootAfterEveryQ) {
+                    setTimeout(() => {
+                        if (gameState.questionResolved) {
+                            openKahootLeaderboardModal(true);
+                            broadcastFullStateToClients({ kahootModalOpen: true, kahootCanAdvance: true });
+                        }
+                    }, 1500);
+                }
+            } else {
+                // Wrong segment selected
+                playSoundEffect("wrong");
+                gameState.disabledSegments.push(selectedIndex);
+                const wrongBtn = document.getElementById(`segmentBtn_${selectedIndex}`);
+                if (wrongBtn) {
+                    wrongBtn.disabled = true;
+                    wrongBtn.className = "segment-btn w-full text-left bg-rose-950/60 border-2 border-rose-500/60 rounded-2xl p-4 flex items-start gap-3.5 opacity-65 cursor-not-allowed";
+                }
+
+                // Online Virtual Hand-Raise Buzzer Queue progression: move to the NEXT person who raised their hand!
+                if ((gameState.mode === "online_host" || gameState.mode === "online_client") && gameState.onlinePlayStyle === "buzzer" && gameState.buzzerQueue.length > 0) {
+                    if (gameState.activeBuzzerIndex + 1 < gameState.buzzerQueue.length) {
+                        gameState.activeBuzzerIndex++;
+                        const nextBuzz = gameState.buzzerQueue[gameState.activeBuzzerIndex];
+                        gameState.activeTeamIndex = nextBuzz.teamIndex;
+                        const nextTeamName = gameState.teams[nextBuzz.teamIndex]?.name || "Team";
+                        showToast(`Incorrect! Next hand in queue: #${gameState.activeBuzzerIndex + 1} ${nextBuzz.playerName} (${nextTeamName})!`);
+                        resetQuestionTimer();
+                    } else {
+                        showToast("Incorrect! Other players can still raise their hand to steal!");
+                    }
+                    renderScoreboard();
+                    renderBuzzerQueueBar();
+                    updateSegmentButtonsInteractivity();
+                    broadcastFullStateToClients();
+                    return;
+                }
+
+                // Classic Team Steal or Reveal
+                if (gameState.allowSteal && gameState.teams.length > 1 && gameState.stealAttemptCount < gameState.teams.length - 1) {
+                    gameState.stealAttemptCount++;
+                    gameState.activeTeamIndex = (gameState.activeTeamIndex + 1) % gameState.teams.length;
+                    const stealTeam = gameState.teams[gameState.activeTeamIndex];
+                    showToast(`Incorrect! Steal chance goes to ${stealTeam.name}!`);
+                    renderScoreboard();
+                    updateSegmentButtonsInteractivity();
+                    resetQuestionTimer();
+                    broadcastFullStateToClients();
+                } else {
+                    gameState.questionResolved = true;
+                    stopQuestionTimer();
+                    gameState.lastScoreSummary = `No points awarded on Question ${gameState.currentQuestionIndex + 1}.`;
+                    highlightCorrectSegmentOnReveal(q.errorIndex);
+                    showFeedbackDrawer(false, activeTeam ? activeTeam.name : "Team", 0, q);
+                    document.getElementById("showKahootAfterQBtn").classList.remove("hidden");
+                    document.getElementById("showKahootAfterQBtn").classList.add("flex");
+                    broadcastFullStateToClients();
+                }
+            }
+        }
+
+        function highlightCorrectSegmentOnReveal(correctIdx) {
+            for (let i = 0; i <= 4; i++) {
+                const btn = document.getElementById(`segmentBtn_${i}`);
+                if (!btn) continue;
+                btn.disabled = true;
+                if (i === correctIdx) {
+                    btn.className = "segment-btn w-full text-left bg-emerald-950/80 border-2 border-emerald-400 rounded-2xl p-4 flex items-start gap-3.5 shadow-lg shadow-emerald-500/20";
+                }
+            }
+        }
+
+        function showFeedbackDrawer(wasCorrect, scorerLabel, pts, q) {
+            const panel = document.getElementById("feedbackPanel");
+            const icon = document.getElementById("feedbackIcon");
+            const title = document.getElementById("feedbackTitle");
+            const badge = document.getElementById("feedbackAwardBadge");
+            const corr = document.getElementById("feedbackCorrection");
+            const exp = document.getElementById("feedbackExplanation");
+
+            panel.classList.remove("hidden");
+            const labels = ["A", "B", "C", "D", "E (No Error)"];
+
+            if (wasCorrect) {
+                panel.className = "rounded-2xl p-4 sm:p-5 border border-emerald-500/40 bg-emerald-950/30 mt-4 pop-in";
+                icon.className = "fa-solid fa-circle-check text-xl text-emerald-400";
+                title.textContent = `Spot On! Awarded to ${scorerLabel}`;
+                title.className = "text-base sm:text-lg font-bold text-emerald-300";
+                badge.textContent = `+${pts} PTS`;
+                badge.className = "px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+            } else {
+                panel.className = "rounded-2xl p-4 sm:p-5 border border-amber-500/40 bg-amber-950/30 mt-4 pop-in";
+                icon.className = "fa-solid fa-circle-info text-xl text-amber-400";
+                title.textContent = `Answer Revealed: Option [${labels[q.errorIndex]}]`;
+                title.className = "text-base sm:text-lg font-bold text-amber-300";
+                badge.textContent = `0 PTS`;
+                badge.className = "px-3 py-1 rounded-full text-xs font-extrabold bg-slate-800 text-slate-300 border border-slate-700";
+            }
+
+            corr.textContent = q.errorIndex === 4
+                ? "Correct Choice: [E] No Error — The sentence is grammatically correct."
+                : `Correct Fix for [${labels[q.errorIndex]}]: "${q.correction}"`;
+            exp.textContent = q.explanation;
+        }
+
+        function renderClientArenaView(s) {
+            const q = s.currentQuestionObj || gameState.questions[gameState.currentQuestionIndex];
+            if (!q) return;
+
+            document.getElementById("questionCounterBadge").textContent = `Question ${gameState.currentQuestionIndex + 1} of 600`;
+            document.getElementById("questionCategoryBadge").textContent = q.category;
+
+            const labels = ["A", "B", "C", "D"];
+            document.getElementById("fullSentenceDisplay").innerHTML = q.segments
+                .map((seg, idx) => `<span class="text-indigo-400 font-bold text-xs align-super mr-0.5">[${labels[idx]}]</span>${seg}`)
+                .join(" ");
+
+            document.getElementById("hintText").textContent = q.hint;
+
+            renderQuestionSegmentButtons(q);
+            renderScoreboard();
+            renderBuzzerQueueBar();
+            updateTimerUI();
+
+            if (gameState.questionResolved) {
+                highlightCorrectSegmentOnReveal(q.errorIndex);
+                showFeedbackDrawer(true, "Round Complete", gameState.pointsPerCorrect, q);
+            } else {
+                document.getElementById("feedbackPanel").classList.add("hidden");
+            }
+        }
+
+        /* =========================================================================
+           11. KAHOOT-STYLE DUAL LEADERBOARD SHOWCASE (TEAMS + INDIVIDUAL PLAYERS)
+           ========================================================================= */
+        function openKahootLeaderboardModal(canAdvanceToNext = false) {
+            const modal = document.getElementById("kahootLeaderboardModal");
+            modal.classList.remove("hidden");
+            playSoundEffect("kahoot");
+
+            document.getElementById("kahootModalSubtitle").textContent = `After Question ${gameState.currentQuestionIndex + 1} of 600`;
+            document.getElementById("kahootLastActionBanner").textContent = gameState.lastScoreSummary || "Live Standings Updated!";
+
+            const nextBtn = document.getElementById("kahootContinueNextQBtn");
+            if (canAdvanceToNext && gameState.mode !== "online_client") {
+                nextBtn.classList.remove("hidden");
+                nextBtn.classList.add("flex");
+            } else {
+                nextBtn.classList.add("hidden");
+                nextBtn.classList.remove("flex");
+            }
+
+            // 1. Render Sorted Team Standings with Animated Progress Bars
+            const teamContainer = document.getElementById("kahootTeamRows");
+            const sortedTeams = [...gameState.teams].sort((a, b) => b.score - a.score);
+            const maxTeamScore = Math.max(100, ...sortedTeams.map(t => t.score));
+
+            teamContainer.innerHTML = sortedTeams.map((team, rankIdx) => {
+                const widthPct = Math.max(12, Math.round((team.score / maxTeamScore) * 100));
+                const medal = rankIdx === 0 ? "🥇" : rankIdx === 1 ? "🥈" : rankIdx === 2 ? "🥉" : `#${rankIdx + 1}`;
+                return `
+                    <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+                        <div class="flex items-center justify-between text-xs sm:text-sm font-bold mb-1.5">
+                            <span class="text-white flex items-center gap-2">
+                                <span class="text-base">${medal}</span>
+                                <span>${team.name}</span>
+                            </span>
+                            <span class="text-emerald-400 font-extrabold">${team.score} pts</span>
+                        </div>
+                        <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden">
+                            <div class="h-full bg-gradient-to-r ${team.color} rounded-full transition-all duration-700" style="width: ${widthPct}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            // 2. Render Sorted Individual Player Standings
+            const indContainer = document.getElementById("kahootIndividualRows");
+            const allPlayers = Object.values(gameState.players);
+
+            if (allPlayers.length === 0) {
+                indContainer.innerHTML = `
+                    <div class="text-center py-8 px-4 text-slate-400 text-xs sm:text-sm">
+                        <i class="fa-solid fa-users-rays text-2xl text-cyan-400 mb-2 block"></i>
+                        Playing in Offline Team Mode. Host an <strong>Online Room</strong> so individual players can join with their names and compete on the Individual Detective Leaderboard!
+                    </div>
+                `;
+            } else {
+                const sortedPlayers = [...allPlayers].sort((a, b) => (b.score || 0) - (a.score || 0));
+                const maxIndScore = Math.max(100, ...sortedPlayers.map(p => p.score || 0));
+
+                indContainer.innerHTML = sortedPlayers.slice(0, 10).map((player, rIdx) => {
+                    const pScore = player.score || 0;
+                    const widthPct = Math.max(12, Math.round((pScore / maxIndScore) * 100));
+                    const medal = rIdx === 0 ? "🌟" : rIdx === 1 ? "⚡" : rIdx === 2 ? "🔥" : `#${rIdx + 1}`;
+                    const teamName = player.teamIndex !== null && gameState.teams[player.teamIndex]
+                        ? gameState.teams[player.teamIndex].name
+                        : "Unassigned";
+
+                    return `
+                        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3">
+                            <div class="flex items-center justify-between text-xs sm:text-sm font-bold mb-1">
+                                <div class="flex items-center gap-2 truncate">
+                                    <span>${medal}</span>
+                                    <span class="text-white truncate">${player.name}</span>
+                                    <span class="px-2 py-0.5 rounded-md bg-slate-800 text-cyan-300 text-[10px]">${teamName}</span>
+                                </div>
+                                <span class="text-amber-300 font-extrabold shrink-0">${pScore} pts</span>
+                            </div>
+                            <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-cyan-400 to-indigo-500 rounded-full transition-all duration-700" style="width: ${widthPct}%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            }
+        }
+
+        function closeKahootLeaderboardModal() {
+            document.getElementById("kahootLeaderboardModal").classList.add("hidden");
+            if (gameState.mode === "online_host") {
+                broadcastFullStateToClients({ kahootModalOpen: false });
+            }
+        }
+
+        function proceedFromKahootToNextQuestion() {
+            closeKahootLeaderboardModal();
+            handleNextQuestionButton();
+        }
+
+        /* =========================================================================
+           12. TIMER SYSTEM & NAVIGATION CONTROLS
+           ========================================================================= */
+        function resetQuestionTimer() {
+            stopQuestionTimer();
+            gameState.timerPaused = false;
+            gameState.timeRemaining = gameState.timerDuration;
+            updateTimerUI();
+
+            if (gameState.timerDuration <= 0 || gameState.mode === "online_client") return;
+
+            gameState.timerInterval = setInterval(() => {
+                if (gameState.timerPaused || gameState.questionResolved) return;
+                gameState.timeRemaining--;
+                if (gameState.timeRemaining <= 5 && gameState.timeRemaining > 0) {
+                    playSoundEffect("tick");
+                }
+                updateTimerUI();
+
+                if (gameState.timeRemaining <= 0) {
+                    stopQuestionTimer();
+                    handleTimeExpired();
+                }
+            }, 1000);
+        }
+
+        function stopQuestionTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+        }
+
+        function togglePauseTimer() {
+            if (gameState.timerDuration <= 0) return;
+            gameState.timerPaused = !gameState.timerPaused;
+            const icon = document.getElementById("pauseTimerIcon");
+            if (icon) {
+                icon.className = gameState.timerPaused ? "fa-solid fa-play text-emerald-400" : "fa-solid fa-pause";
+            }
+            updateTimerUI();
+        }
+
+        function changeLiveTimerDuration(sec) {
+            gameState.timerDuration = sec;
+            document.querySelectorAll(".live-timer-btn").forEach(btn => {
+                const bVal = parseInt(btn.getAttribute("data-livetimer"), 10);
+                btn.className = bVal === sec
+                    ? "live-timer-btn py-1.5 rounded-lg bg-cyan-500/25 border border-cyan-400 text-cyan-200 font-bold"
+                    : "live-timer-btn py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold border border-slate-700";
+            });
+            resetQuestionTimer();
+            broadcastFullStateToClients();
+        }
+
+        function updateTimerUI() {
+            const readout = document.getElementById("timerReadout");
+            const subtext = document.getElementById("timerStatusSubtext");
+            const vBar = document.getElementById("timerVerticalBar");
+
+            if (gameState.timerDuration <= 0) {
+                readout.textContent = "OFF";
+                subtext.textContent = "No Limit";
+                if (vBar) vBar.style.height = "100%";
+                return;
+            }
+
+            const mins = Math.floor(Math.max(0, gameState.timeRemaining) / 60);
+            const secs = Math.max(0, gameState.timeRemaining) % 60;
+            readout.textContent = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+            subtext.textContent = gameState.timerPaused ? "Paused" : "Counting Down";
+
+            const pct = Math.max(0, Math.min(100, (gameState.timeRemaining / gameState.timerDuration) * 100));
+            if (vBar) vBar.style.height = `${pct}%`;
+        }
+
+        function handleTimeExpired() {
+            playSoundEffect("wrong");
+            // In Online Hand-Raise Buzzer mode, advance to the next hand in the queue if time runs out
+            if (gameState.mode === "online_host" && gameState.onlinePlayStyle === "buzzer" && gameState.activeBuzzerIndex + 1 < gameState.buzzerQueue.length) {
+                gameState.activeBuzzerIndex++;
+                const nextBuzz = gameState.buzzerQueue[gameState.activeBuzzerIndex];
+                gameState.activeTeamIndex = nextBuzz.teamIndex;
+                showToast(`Time's up! Next hand in queue: ${nextBuzz.playerName}!`);
+                renderBuzzerQueueBar();
+                renderScoreboard();
+                resetQuestionTimer();
+                broadcastFullStateToClients();
+                return;
+            }
+
+            revealAnswerManually();
+        }
+
+        function toggleQuestionHint() {
+            const box = document.getElementById("hintBox");
+            box.classList.toggle("hidden");
+        }
+
+        function passOrSkipTurn() {
+            if (gameState.questionResolved) return;
+            gameState.activeTeamIndex = (gameState.activeTeamIndex + 1) % gameState.teams.length;
+            renderScoreboard();
+            resetQuestionTimer();
+            broadcastFullStateToClients();
+        }
+
+        function revealAnswerManually() {
+            const q = gameState.questions[gameState.currentQuestionIndex];
+            if (!q || gameState.questionResolved) return;
+            gameState.questionResolved = true;
+            stopQuestionTimer();
+            highlightCorrectSegmentOnReveal(q.errorIndex);
+            showFeedbackDrawer(false, "Host Reveal", 0, q);
+            document.getElementById("showKahootAfterQBtn").classList.remove("hidden");
+            document.getElementById("showKahootAfterQBtn").classList.add("flex");
+            broadcastFullStateToClients();
+        }
+
+        function handleNextQuestionButton() {
+            if (gameState.mode === "online_client") {
+                showToast("Only the Host can advance to the next question.");
+                return;
+            }
+
+            if (gameState.currentQuestionIndex + 1 < gameState.questions.length) {
+                gameState.currentQuestionIndex++;
+                gameState.activeTeamIndex = (gameState.activeTeamIndex + 1) % gameState.teams.length;
+                renderScoreboard();
+                loadCurrentQuestion();
+            } else {
+                showLeaderboardScreen();
+            }
+        }
+
+        function openQuestionJumpModal() {
+            const modal = document.getElementById("questionJumpModal");
+            const grid = document.getElementById("questionJumpGrid");
+            modal.classList.remove("hidden");
+            grid.innerHTML = "";
+            for (let i = 0; i < gameState.questions.length; i++) {
+                const btn = document.createElement("button");
+                const isCurr = i === gameState.currentQuestionIndex;
+                btn.className = `py-2 rounded-xl text-xs font-bold border ${
+                    isCurr
+                        ? "bg-indigo-500 text-white border-indigo-400"
+                        : "bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-800"
+                }`;
+                btn.textContent = i + 1;
+                btn.onclick = () => {
+                    gameState.currentQuestionIndex = i;
+                    closeQuestionJumpModal();
+                    loadCurrentQuestion();
+                };
+                grid.appendChild(btn);
+            }
+        }
+
+        function closeQuestionJumpModal() {
+            document.getElementById("questionJumpModal").classList.add("hidden");
+        }
+
+        function showLeaderboardScreen() {
+            stopQuestionTimer();
+            document.getElementById("gameArenaScreen").classList.add("hidden");
+            document.getElementById("finalLeaderboardScreen").classList.remove("hidden");
+
+            const teamsList = document.getElementById("finalTeamsStandingsList");
+            const sortedTeams = [...gameState.teams].sort((a, b) => b.score - a.score);
+            teamsList.innerHTML = sortedTeams.map((t, i) => `
+                <div class="flex items-center justify-between bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3">
+                    <span class="font-bold text-white">#${i + 1} ${t.name}</span>
+                    <span class="font-extrabold text-emerald-400">${t.score} pts</span>
+                </div>
+            `).join("");
+
+            const indList = document.getElementById("finalIndividualsStandingsList");
+            const sortedPlayers = Object.values(gameState.players).sort((a, b) => (b.score || 0) - (a.score || 0));
+            if (sortedPlayers.length === 0) {
+                indList.innerHTML = `<p class="text-xs text-slate-400 italic">No individual online players recorded in this session.</p>`;
+            } else {
+                indList.innerHTML = sortedPlayers.map((p, i) => {
+                    const tName = p.teamIndex !== null && gameState.teams[p.teamIndex] ? gameState.teams[p.teamIndex].name : "Team";
+                    return `
+                        <div class="flex items-center justify-between bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3">
+                            <span class="font-bold text-white">#${i + 1} ${p.name} <small class="text-cyan-300">(${tName})</small></span>
+                            <span class="font-extrabold text-amber-300">${p.score || 0} pts</span>
+                        </div>
+                    `;
+                }).join("");
+            }
+        }
+
+        function returnToArenaFromFinal() {
+            document.getElementById("finalLeaderboardScreen").classList.add("hidden");
+            document.getElementById("gameArenaScreen").classList.remove("hidden");
+        }
+
+        function openResetModal() {
+            document.getElementById("resetConfirmModal").classList.remove("hidden");
+        }
+
+        function closeResetModal() {
+            document.getElementById("resetConfirmModal").classList.add("hidden");
+        }
+
+        function confirmReturnToMain() {
+            closeResetModal();
+            stopQuestionTimer();
+            document.getElementById("gameArenaScreen").classList.add("hidden");
+            document.getElementById("setupScreen").classList.add("hidden");
+            document.getElementById("onlineLobbyScreen").classList.add("hidden");
+            document.getElementById("finalLeaderboardScreen").classList.add("hidden");
+            document.getElementById("modeSelectScreen").classList.remove("hidden");
+            document.getElementById("onlineHeaderBadge").classList.add("hidden");
+            document.getElementById("lobbyManageBtn").classList.add("hidden");
+            document.getElementById("questionBankBtn").classList.add("hidden");
+            document.getElementById("endGameEarlyBtn").classList.add("hidden");
+            document.getElementById("resetSetupBtn").classList.add("hidden");
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderTeamSetupInputs();
+        });
+    </script>
+</body>
+</html>
